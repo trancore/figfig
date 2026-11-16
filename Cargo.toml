@@ -1,0 +1,23 @@
+[workspace]
+members = ["crates/core", "crates/cli", "src-tauri"]
+default-members = ["crates/core", "crates/cli"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+license = "MIT"
+
+[workspace.dependencies]
+anyhow = "1.0.104"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net", "io-util", "sync", "time", "signal", "process"] }
+figfig-core = { path = "crates/core" }
+
+# Keep host proc-macro debug sections: older LLVM strip implementations can
+# produce Mach-O LINKEDIT alignment rejected by macOS 26+ (rust-lang/rust#157750).
+[profile.release.build-override]
+debug = 1
+strip = "none"

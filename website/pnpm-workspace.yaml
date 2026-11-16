@@ -1,0 +1,3 @@
+packages: []
+overrides:
+  "@docusaurus/theme-mermaid@3.10.2>mermaid": "^11.17.2"

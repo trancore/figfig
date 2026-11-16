@@ -1,0 +1,765 @@
+[
+  {
+    "name": "git",
+    "description": "Distributed version control",
+    "options": [
+      {
+        "name": "--help",
+        "description": "Show command help",
+        "takesValue": false
+      },
+      {
+        "name": "--version",
+        "description": "Show Git version",
+        "takesValue": false
+      },
+      {
+        "name": "-C",
+        "description": "Run in a directory",
+        "takesValue": true
+      }
+    ],
+    "subcommands": [
+      {
+        "name": "status",
+        "description": "Show working tree status",
+        "options": [
+          {
+            "name": "--short",
+            "description": "Compact output",
+            "takesValue": false
+          },
+          {
+            "name": "--branch",
+            "description": "Show branch information",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "add",
+        "description": "Stage file changes",
+        "options": [
+          {
+            "name": "--all",
+            "description": "Stage all changes",
+            "takesValue": false
+          },
+          {
+            "name": "--patch",
+            "description": "Interactively stage changes",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "commit",
+        "description": "Record staged changes",
+        "options": [
+          {
+            "name": "-m",
+            "description": "Commit message",
+            "takesValue": true
+          },
+          {
+            "name": "--amend",
+            "description": "Amend the last commit",
+            "takesValue": false
+          },
+          {
+            "name": "--signoff",
+            "description": "Add Signed-off-by",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "checkout",
+        "description": "Switch branches or restore files",
+        "options": [
+          {
+            "name": "-b",
+            "description": "Create a new branch",
+            "takesValue": true
+          }
+        ],
+        "generator": "gitBranches"
+      },
+      {
+        "name": "switch",
+        "description": "Switch branches",
+        "options": [
+          {
+            "name": "-c",
+            "description": "Create a new branch",
+            "takesValue": true
+          }
+        ],
+        "generator": "gitBranches"
+      },
+      {
+        "name": "branch",
+        "description": "List or manage branches",
+        "options": [
+          {
+            "name": "--all",
+            "description": "Include remote branches",
+            "takesValue": false
+          },
+          {
+            "name": "--delete",
+            "description": "Delete a branch",
+            "takesValue": false
+          }
+        ],
+        "generator": "gitBranches"
+      },
+      {
+        "name": "merge",
+        "description": "Merge a branch",
+        "options": [
+          {
+            "name": "--no-ff",
+            "description": "Always create a merge commit",
+            "takesValue": false
+          },
+          {
+            "name": "--abort",
+            "description": "Abort the merge",
+            "takesValue": false
+          }
+        ],
+        "generator": "gitBranches"
+      },
+      {
+        "name": "rebase",
+        "description": "Reapply commits",
+        "options": [
+          {
+            "name": "--interactive",
+            "description": "Edit the commit sequence",
+            "takesValue": false
+          },
+          {
+            "name": "--abort",
+            "description": "Abort the rebase",
+            "takesValue": false
+          },
+          {
+            "name": "--continue",
+            "description": "Continue the rebase",
+            "takesValue": false
+          }
+        ],
+        "generator": "gitBranches"
+      },
+      {
+        "name": "diff",
+        "description": "Show changes",
+        "options": [
+          {
+            "name": "--staged",
+            "description": "Show staged changes",
+            "takesValue": false
+          },
+          {
+            "name": "--stat",
+            "description": "Show a summary",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "log",
+        "description": "Show commit history",
+        "options": [
+          {
+            "name": "--oneline",
+            "description": "One line per commit",
+            "takesValue": false
+          },
+          {
+            "name": "--graph",
+            "description": "Show the commit graph",
+            "takesValue": false
+          },
+          {
+            "name": "--all",
+            "description": "Include all refs",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "push",
+        "description": "Push commits",
+        "options": [
+          {
+            "name": "--set-upstream",
+            "description": "Set upstream tracking",
+            "takesValue": false
+          },
+          {
+            "name": "--force-with-lease",
+            "description": "Require the remote ref to be unchanged",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "pull",
+        "description": "Fetch and integrate changes",
+        "options": [
+          {
+            "name": "--rebase",
+            "description": "Rebase local commits",
+            "takesValue": false
+          },
+          {
+            "name": "--ff-only",
+            "description": "Only fast-forward",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "fetch",
+        "description": "Fetch remote refs",
+        "options": [
+          {
+            "name": "--all",
+            "description": "Fetch all remotes",
+            "takesValue": false
+          },
+          {
+            "name": "--prune",
+            "description": "Remove deleted remote refs",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "clone",
+        "description": "Clone a repository",
+        "options": [
+          {
+            "name": "--depth",
+            "description": "Limit history depth",
+            "takesValue": true
+          },
+          {
+            "name": "--branch",
+            "description": "Select a branch",
+            "takesValue": true
+          }
+        ]
+      },
+      {
+        "name": "restore",
+        "description": "Restore working tree files",
+        "options": [
+          {
+            "name": "--staged",
+            "description": "Restore the index",
+            "takesValue": false
+          },
+          {
+            "name": "--source",
+            "description": "Restore from a tree",
+            "takesValue": true
+          }
+        ]
+      },
+      {
+        "name": "stash",
+        "description": "Store uncommitted changes",
+        "options": []
+      },
+      {
+        "name": "remote",
+        "description": "Manage remote repositories",
+        "options": []
+      },
+      {
+        "name": "tag",
+        "description": "Manage tags",
+        "options": []
+      }
+    ]
+  },
+  {
+    "name": "brew",
+    "description": "The macOS package manager",
+    "options": [
+      {
+        "name": "--help",
+        "description": "Show command help",
+        "takesValue": false
+      },
+      {
+        "name": "--version",
+        "description": "Show Homebrew version",
+        "takesValue": false
+      }
+    ],
+    "subcommands": [
+      {
+        "name": "install",
+        "description": "Install a package",
+        "options": [
+          {
+            "name": "--cask",
+            "description": "Install a macOS app",
+            "takesValue": false
+          },
+          {
+            "name": "--formula",
+            "description": "Install a formula",
+            "takesValue": false
+          },
+          {
+            "name": "--build-from-source",
+            "description": "Build locally",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "uninstall",
+        "description": "Remove a package",
+        "options": []
+      },
+      {
+        "name": "upgrade",
+        "description": "Upgrade packages",
+        "options": []
+      },
+      {
+        "name": "update",
+        "description": "Update Homebrew",
+        "options": []
+      },
+      {
+        "name": "search",
+        "description": "Search for packages",
+        "options": []
+      },
+      {
+        "name": "info",
+        "description": "Show package information",
+        "options": []
+      },
+      {
+        "name": "list",
+        "description": "List installed packages",
+        "options": [
+          {
+            "name": "--formula",
+            "description": "List formulae",
+            "takesValue": false
+          },
+          {
+            "name": "--cask",
+            "description": "List casks",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "doctor",
+        "description": "Check Homebrew configuration",
+        "options": []
+      },
+      {
+        "name": "tap",
+        "description": "Add a package repository",
+        "options": []
+      },
+      {
+        "name": "services",
+        "description": "Manage background services",
+        "options": []
+      },
+      {
+        "name": "cleanup",
+        "description": "Remove old package versions",
+        "options": []
+      }
+    ]
+  },
+  {
+    "name": "npm",
+    "description": "JavaScript package manager",
+    "options": [
+      {
+        "name": "--help",
+        "description": "Show command help",
+        "takesValue": false
+      },
+      {
+        "name": "--version",
+        "description": "Show version",
+        "takesValue": false
+      }
+    ],
+    "subcommands": [
+      {
+        "name": "install",
+        "description": "Install dependencies",
+        "options": [
+          {
+            "name": "--save-dev",
+            "description": "Add a development dependency",
+            "takesValue": false
+          },
+          {
+            "name": "--global",
+            "description": "Install globally",
+            "takesValue": false
+          },
+          {
+            "name": "--ignore-scripts",
+            "description": "Skip lifecycle scripts",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "add",
+        "description": "Add a dependency",
+        "options": [
+          {
+            "name": "--save-dev",
+            "description": "Add a development dependency",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "run",
+        "description": "Run a package script",
+        "options": [],
+        "generator": "packageScripts"
+      },
+      {
+        "name": "test",
+        "description": "Run tests",
+        "options": []
+      },
+      {
+        "name": "start",
+        "description": "Start the project",
+        "options": []
+      },
+      {
+        "name": "build",
+        "description": "Build the project",
+        "options": []
+      },
+      {
+        "name": "exec",
+        "description": "Execute a package binary",
+        "options": []
+      },
+      {
+        "name": "remove",
+        "description": "Remove a dependency",
+        "options": []
+      },
+      {
+        "name": "update",
+        "description": "Update dependencies",
+        "options": []
+      },
+      {
+        "name": "outdated",
+        "description": "Check dependency versions",
+        "options": []
+      },
+      {
+        "name": "init",
+        "description": "Create a package.json",
+        "options": []
+      },
+      {
+        "name": "publish",
+        "description": "Publish a package",
+        "options": []
+      },
+      {
+        "name": "ci",
+        "description": "Install locked dependencies",
+        "options": []
+      }
+    ]
+  },
+  {
+    "name": "pnpm",
+    "description": "JavaScript package manager",
+    "options": [
+      {
+        "name": "--help",
+        "description": "Show command help",
+        "takesValue": false
+      },
+      {
+        "name": "--version",
+        "description": "Show version",
+        "takesValue": false
+      }
+    ],
+    "subcommands": [
+      {
+        "name": "install",
+        "description": "Install dependencies",
+        "options": [
+          {
+            "name": "--save-dev",
+            "description": "Add a development dependency",
+            "takesValue": false
+          },
+          {
+            "name": "--global",
+            "description": "Install globally",
+            "takesValue": false
+          },
+          {
+            "name": "--ignore-scripts",
+            "description": "Skip lifecycle scripts",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "add",
+        "description": "Add a dependency",
+        "options": [
+          {
+            "name": "--save-dev",
+            "description": "Add a development dependency",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "run",
+        "description": "Run a package script",
+        "options": [],
+        "generator": "packageScripts"
+      },
+      {
+        "name": "test",
+        "description": "Run tests",
+        "options": []
+      },
+      {
+        "name": "start",
+        "description": "Start the project",
+        "options": []
+      },
+      {
+        "name": "build",
+        "description": "Build the project",
+        "options": []
+      },
+      {
+        "name": "exec",
+        "description": "Execute a package binary",
+        "options": []
+      },
+      {
+        "name": "remove",
+        "description": "Remove a dependency",
+        "options": []
+      },
+      {
+        "name": "update",
+        "description": "Update dependencies",
+        "options": []
+      },
+      {
+        "name": "outdated",
+        "description": "Check dependency versions",
+        "options": []
+      },
+      {
+        "name": "init",
+        "description": "Create a package.json",
+        "options": []
+      },
+      {
+        "name": "publish",
+        "description": "Publish a package",
+        "options": []
+      }
+    ]
+  },
+  {
+    "name": "docker",
+    "description": "Manage containers and images",
+    "options": [
+      {
+        "name": "--help",
+        "description": "Show command help",
+        "takesValue": false
+      },
+      {
+        "name": "--version",
+        "description": "Show Docker version",
+        "takesValue": false
+      },
+      {
+        "name": "--context",
+        "description": "Select a context",
+        "takesValue": true
+      }
+    ],
+    "subcommands": [
+      {
+        "name": "run",
+        "description": "Run a container",
+        "options": [
+          {
+            "name": "--detach",
+            "description": "Run in the background",
+            "takesValue": false
+          },
+          {
+            "name": "--rm",
+            "description": "Remove on exit",
+            "takesValue": false
+          },
+          {
+            "name": "--name",
+            "description": "Set a container name",
+            "takesValue": true
+          },
+          {
+            "name": "-p",
+            "description": "Publish a port",
+            "takesValue": true
+          },
+          {
+            "name": "-v",
+            "description": "Mount a volume",
+            "takesValue": true
+          },
+          {
+            "name": "-it",
+            "description": "Interactive terminal",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "build",
+        "description": "Build an image",
+        "options": [
+          {
+            "name": "-t",
+            "description": "Set image tag",
+            "takesValue": true
+          },
+          {
+            "name": "-f",
+            "description": "Select Dockerfile",
+            "takesValue": true
+          },
+          {
+            "name": "--no-cache",
+            "description": "Disable build cache",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "ps",
+        "description": "List containers",
+        "options": [
+          {
+            "name": "--all",
+            "description": "Include stopped containers",
+            "takesValue": false
+          },
+          {
+            "name": "--quiet",
+            "description": "Only IDs",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "images",
+        "description": "List images",
+        "options": []
+      },
+      {
+        "name": "pull",
+        "description": "Pull an image",
+        "options": []
+      },
+      {
+        "name": "push",
+        "description": "Push an image",
+        "options": []
+      },
+      {
+        "name": "exec",
+        "description": "Execute in a container",
+        "options": [
+          {
+            "name": "-it",
+            "description": "Interactive terminal",
+            "takesValue": false
+          }
+        ]
+      },
+      {
+        "name": "logs",
+        "description": "Show container logs",
+        "options": [
+          {
+            "name": "--follow",
+            "description": "Follow output",
+            "takesValue": false
+          },
+          {
+            "name": "--tail",
+            "description": "Limit lines",
+            "takesValue": true
+          }
+        ]
+      },
+      {
+        "name": "stop",
+        "description": "Stop a container",
+        "options": []
+      },
+      {
+        "name": "rm",
+        "description": "Remove a container",
+        "options": []
+      },
+      {
+        "name": "rmi",
+        "description": "Remove an image",
+        "options": []
+      },
+      {
+        "name": "compose",
+        "description": "Manage a Compose project",
+        "options": []
+      },
+      {
+        "name": "context",
+        "description": "Manage Docker contexts",
+        "options": []
+      },
+      {
+        "name": "system",
+        "description": "Manage Docker data",
+        "options": []
+      }
+    ]
+  }
+]

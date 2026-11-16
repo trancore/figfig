@@ -1,0 +1,14 @@
+node_modules/
+.pnpm-store/
+dist/
+target/
+src-tauri/gen/
+.DS_Store
+coverage/
+__pycache__/
+*.log
+.env
+.env.*
+!.env.example
+website/.docusaurus/
+website/build/

@@ -1,0 +1,14 @@
+{
+  "title": {
+    "message": "figfig",
+    "description": "The title in the navbar"
+  },
+  "item.label.ドキュメント": {
+    "message": "Documentation",
+    "description": "Navbar item with label ドキュメント"
+  },
+  "item.label.コマンド一覧": {
+    "message": "CLI reference",
+    "description": "Navbar item with label コマンド一覧"
+  }
+}

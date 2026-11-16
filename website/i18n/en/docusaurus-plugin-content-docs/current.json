@@ -1,0 +1,18 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.documentation.category.はじめに": {
+    "message": "Getting started",
+    "description": "The label for category 'はじめに' in sidebar 'documentation'"
+  },
+  "sidebar.documentation.category.リファレンス": {
+    "message": "Reference",
+    "description": "The label for category 'リファレンス' in sidebar 'documentation'"
+  },
+  "sidebar.documentation.category.開発": {
+    "message": "Development",
+    "description": "The label for category '開発' in sidebar 'documentation'"
+  }
+}

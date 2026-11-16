@@ -1,0 +1,47 @@
+name: Prepare release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-formula:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Verify version and generated specifications
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm run check
+          python3 - <<'PY'
+          import json, os, tomllib
+          version = json.load(open('package.json'))['version']
+          assert os.environ['GITHUB_REF_NAME'] == 'v' + version, 'Run on a matching version tag'
+          assert tomllib.load(open('Cargo.toml', 'rb'))['workspace']['package']['version'] == version
+          assert json.load(open('src-tauri/tauri.conf.json'))['version'] == version
+          PY
+      - name: Generate immutable source artifact and formula
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive="figfig-${version}-source.tar.gz"
+          git archive --format=tar.gz --prefix="figfig-${version}/" --output="$archive" "$GITHUB_SHA"
+          checksum=$(shasum -a 256 "$archive" | cut -d ' ' -f 1)
+          python3 scripts/generate-formula.py --repository "$REPOSITORY" --version "$version" --sha256 "$checksum"
+          ruby -c Formula/figfig.rb
+          shasum -a 256 "$archive" > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-and-homebrew-formula
+          path: |
+            figfig-*-source.tar.gz
+            Formula/figfig.rb
+            SHA256SUMS

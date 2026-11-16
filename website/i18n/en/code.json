@@ -1,0 +1,59 @@
+{
+  "homepage.title": {
+    "message": "Terminal completion and history suggestions"
+  },
+  "homepage.description": {
+    "message": "figfig is a CLI tool that adds completion popups and history suggestions to zsh on macOS. Find installation instructions, commands, configuration, and development guides."
+  },
+  "homepage.heading.first": {
+    "message": "Completions and"
+  },
+  "homepage.heading.second": {
+    "message": "history suggestions."
+  },
+  "homepage.introduction": {
+    "message": "figfig completes commands and paths as you type. Install and configure it from the CLI, then use it in your everyday terminal."
+  },
+  "homepage.install": {
+    "message": "Installation guide"
+  },
+  "homepage.commands": {
+    "message": "CLI reference"
+  },
+  "homepage.releaseNote": {
+    "message": "The Homebrew tap is being prepared. You can install from source today."
+  },
+  "homepage.demo.caption": {
+    "message": "Completion popup example"
+  },
+  "homepage.demo.select": {
+    "message": "Select"
+  },
+  "homepage.demo.insert": {
+    "message": "Insert"
+  },
+  "homepage.demo.close": {
+    "message": "Close"
+  },
+  "homepage.guides.label": {
+    "message": "Find documentation by task"
+  },
+  "homepage.usage.title": {
+    "message": "Learn the key bindings"
+  },
+  "homepage.usage.description": {
+    "message": "Select and insert completions, and accept history suggestions."
+  },
+  "homepage.configuration.title": {
+    "message": "Configure your environment"
+  },
+  "homepage.configuration.description": {
+    "message": "Set popup visibility, history suggestions, and candidate limits."
+  },
+  "homepage.troubleshooting.title": {
+    "message": "When suggestions are missing"
+  },
+  "homepage.troubleshooting.description": {
+    "message": "Check helper startup, permissions, and shell integration."
+  }
+}

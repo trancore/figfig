@@ -1,12 +1,8 @@
 ---
-description: 作業範囲、検証結果、無関係な変更を確認したうえで、対象を絞ったGitコミットを作成します。
-metadata:
-    github-path: skills/commit-workflow
-    github-ref: refs/heads/main
-    github-repo: https://github.com/trancore/skills-repository
-    github-tree-sha: 9143968d2b5f4e07d616db7e1bae47cddf99f71e
 name: commit-workflow
+description: 作業範囲、検証結果、無関係な変更を確認したうえで、対象を絞ったGitコミットを作成します。
 ---
+
 # コミット作業手順
 
 ユーザーが現在の作業のコミット、またはコミット準備を明示的に依頼したときに使用する。

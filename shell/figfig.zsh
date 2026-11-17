@@ -36,6 +36,8 @@ _figfig_disconnect() {
 
 _figfig_connect() {
   (( _figfig_read_fd < 0 )) || return 0
+  # Hide the helper's job/PID announcement, restoring job control on return.
+  setopt localoptions nomonitor
   # Process substitution provides a persistent, bidirectional helper pipe.
   local helper_in helper_out
   coproc command "$_FIGFIG_BIN" bridge "$_figfig_session" 2>/dev/null

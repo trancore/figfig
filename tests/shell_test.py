@@ -35,7 +35,7 @@ eval \"$({CLI} init zsh)\"
 print -s -- 'echo history_completed'
 _test_probe() {{
   print -r -- \"$BUFFER\" \"$_figfig_visible\" > \"$TEST_PROBE\"
-  print -r -- \"fds=$_figfig_read_fd,$_figfig_write_fd rev=$_figfig_revision count=${{#_figfig_insert}}\" >> \"$TEST_PROBE\"
+  print -r -- \"fds=$_figfig_read_fd,$_figfig_write_fd rev=$_figfig_revision count=${{#_figfig_insert}} monitor=$options[monitor]\" >> \"$TEST_PROBE\"
   print -r -- '__PROBE_READY__' > /dev/tty
 }}
 zle -N _test_probe
@@ -45,7 +45,7 @@ bindkey '^G' _test_probe
         os.close(slave)
         self.output = b""
         try:
-            self.wait_output(b"FIGFIG_PROMPT> ")
+            self.startup_output = self.wait_output(b"FIGFIG_PROMPT> ")
         except BaseException:
             self.close()
             raise
@@ -105,6 +105,17 @@ class ShellIntegration(unittest.TestCase):
         self.shell = Shell(self.directory)
         self.shell.backend = self.backend
         self.addCleanup(self.shell.close)
+
+    def test_startup_hides_only_the_helper_job_notification(self):
+        # line-init runs after the prompt; wait for a widget to ensure it finished.
+        self.shell.send(b"\x07")
+        output = self.shell.startup_output + self.shell.wait_output(b"__PROBE_READY__")
+        self.assertNotRegex(output, rb"\[\d+\]\s+\d+")
+        self.assertIn("monitor=on", self.shell.probe.read_text())
+
+        self.shell.send("/bin/sleep 0.01 & wait $!\r")
+        output = self.shell.wait_output(b"FIGFIG_PROMPT> ")
+        self.assertRegex(output, rb"\[\d+\]\s+\d+")
 
     def test_enter_inserts_then_next_enter_executes(self):
         self.shell.send("echo fig")

@@ -3,6 +3,16 @@ title: Verification
 description: Automated results, native checks, and remaining verification for the initial release.
 ---
 
+## Homebrew preparation results recorded on 2026-11-18 {#2026-11-18のhomebrew公開準備の確認結果}
+
+- Built and installed a source archive of commit `d4e29633a41f5b22564b0c12b8e682665315116e` through a disposable Homebrew tap on Apple Silicon and macOS 27.0.1. The local validation formula was kept out of the public tap directory.
+- The final formula passed `brew style`, `brew audit --strict`, and `brew test`, covering the CLI version, completion, zsh initialization, helper placement at `libexec/figfig.app`, and ad-hoc signature verification.
+- Uninstallation and test-tap removal succeeded. The real `.zshrc` and macOS permissions were unchanged.
+- All 19 tests passed: 5 CLI, 6 zsh, 3 formula-generation, and 5 release-preparation tests. Disposable Git repositories cover tag/commit/version mismatch rejection, consistency between the archive, SHA-256, and formula, repeatable archives, and exclusion of uncommitted files.
+- Existing PTY and Unix-socket tests require execution outside the sandbox. They ran with disposable homes and test processes.
+- actionlint checks for the release and tap workflows, website type checking, and both locale builds passed.
+- This formula's Intel build, GitHub Draft Release creation, installation through the public tap, upgrades between versions, and native terminal interaction for this revision remain unverified. Check them in CI and release acceptance after publication.
+
 ## Results recorded on 2026-11-16 {#2026-11-16の確認結果}
 
 - TypeScript checking, 2 popup UI tests, 20 Rust tests, 5 CLI integration tests, 6 zsh integration tests, and 2 formula-generation tests were run on Apple Silicon and macOS.

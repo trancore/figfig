@@ -1,5 +1,15 @@
 # 検証
 
+## 2026-11-18のHomebrew公開準備の確認結果
+
+- Apple Silicon・macOS 27.0.1で、コミット `d4e29633a41f5b22564b0c12b8e682665315116e` のソースアーカイブを検証専用tapからHomebrewでビルド・インストール。公開用tapにはローカル検証用Formulaを配置していない。
+- 最終Formulaで `brew style`、`brew audit --strict`、`brew test` が成功。CLIのバージョン・補完・zsh初期化、`libexec/figfig.app` の配置、ad-hoc署名を確認。
+- 検証用パッケージの `brew uninstall` と検証用tapの削除が成功。実際の `.zshrc` とmacOSの権限は変更していない。
+- CLI 5件、zsh 6件、Formula生成3件、リリース生成5件の計19件が成功。リリース生成は一時Gitリポジトリを使い、タグ・コミット・バージョンの不一致拒否、アーカイブとSHA-256・Formulaの整合、再生成時の同一性、未コミットファイルの除外を確認。
+- PTY／Unixソケットを使う既存テストはサンドボックス内では許可不足となるため、使い捨てのHOMEとテスト用プロセスを使って制約外で実行。
+- リリース用・tap用ワークフローのactionlint、日英ドキュメントの型検査・サイトビルドが成功。
+- Intelでの今回のFormulaのビルド、GitHub上でのDraft Release作成、公開URLからの正式tap導入、バージョン間のアップグレード、実ターミナルでの今回のネイティブ操作は未確認。公開後のCI・受け入れ確認に残す。
+
 ## 2026-11-16の確認結果
 
 - Apple Silicon・macOS環境でTypeScriptの型検査、ポップアップUIテスト2件、Rustテスト20件、CLI統合テスト5件、zsh統合テスト6件、Formula生成テスト2件を実行。

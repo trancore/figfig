@@ -17,7 +17,7 @@ class FormulaGeneration(unittest.TestCase):
         self.assertIn('sha256 "' + "a" * 64 + '"', formula)
         self.assertIn('libexec.install "target/release/bundle/macos/figfig.app"', formula)
         self.assertIn('depends_on "pnpm@12" => :build', formula)
-        self.assertIn('Formula["pnpm@12"].opt_bin', formula)
+        self.assertIn('formula_opt_bin("pnpm@12")', formula)
         self.assertIn("figfig setup", formula)
         self.assertIn("figfig permissions", formula)
 
@@ -26,3 +26,8 @@ class FormulaGeneration(unittest.TestCase):
             generator.generate('owner/repo"; system "command"', "0.1.0", "a" * 64)
         with self.assertRaises(ValueError):
             generator.generate("owner/repo", "main", "a" * 64)
+
+    def test_local_override_without_a_version_in_the_filename(self):
+        formula = generator.generate("trancore/figfig", "0.1.0", "a" * 64, "file:///tmp/source.tar.gz")
+        self.assertIn('url "file:///tmp/source.tar.gz"', formula)
+        self.assertIn('version "0.1.0"', formula)

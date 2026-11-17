@@ -29,6 +29,12 @@ flowchart LR
 
 シェル→ブリッジは`operation`、`revision`、`cursor`、`cwd`、`buffer`、`selected`の6フィールドをNULで区切る。ブリッジ→シェルは`R revision start end visible count [quotedInsertion appendSpace]...`。`P historyEnabled`は設定・一時停止を反映する。
 
+## ポップアップの描画
+
+Reactの`Popup`は幅320px・行高20pxの候補一覧と、選択候補の説明を表示する高さ20pxのフッターで構成します。描画ヘルパーの`popup_height()`は上下1pxずつの外枠も含め、`22 + 候補数 × 20`でウィンドウの高さを計算します。余白や行高を変更するときは、CSSとこの計算を同時に更新します。
+
+候補名とアイコンは7種類の配色で区別し、選択行には対応する背景色と左端のマーカーを表示します。`listbox`の`aria-activedescendant`と各候補の`aria-selected`で選択状態を示し、選択候補の`aria-describedby`をフッターの説明へ関連付けます。説明が空なら候補の種類名を使い、ディレクトリは`folder`と表示します。
+
 ## 位置・フォーカス
 
 ブリッジ起動時に親プロセス列からTerminal.app／iTerm2のPIDを特定する。アプリはそのPIDと最前面のアプリが一致し、フォーカスされた要素の挿入位置が取得できた場合だけ表示する。

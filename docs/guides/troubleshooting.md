@@ -24,6 +24,8 @@ figfig doctor
 
 `figfig complete 'git ch'`で`candidates`が返る場合は、補完データが生成されています。ポップアップについては`doctor`の位置・権限情報も確認してください。
 
+Zedの内蔵ターミナルでは追加で `figfig setup zed` を実行し、macOSの「figfig Cursor Tracking」の有効化を許可します。Zedを再起動して新しいzshターミナルを開いてください。登録が認識されない場合はログアウト・ログイン後に再実行します。Zedの位置取得にはInputMethodKitを使うため、アクセシビリティの許可だけでは表示されません。
+
 ## ヘルパーが見つからない
 
 ソースビルドでは次の両方があるか確認します。

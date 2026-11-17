@@ -77,7 +77,12 @@ pub fn require_ack(message: ServerMessage) -> Result<()> {
 }
 
 pub async fn exchange(message: ClientMessage) -> Result<ServerMessage> {
-    tokio::time::timeout(Duration::from_secs(2), async {
+    let timeout = if matches!(&message, ClientMessage::SetupCursor { .. }) {
+        Duration::from_secs(120)
+    } else {
+        Duration::from_secs(2)
+    };
+    tokio::time::timeout(timeout, async {
         let mut stream = UnixStream::connect(runtime::socket_path()?)
             .await
             .context("Popup helper is not running. It starts automatically in zsh; use figfig start to check it manually.")?;
@@ -95,5 +100,5 @@ pub async fn exchange(message: ClientMessage) -> Result<ServerMessage> {
         }
     })
     .await
-    .context("Popup helper did not respond within 2 seconds")?
+    .context("Popup helper did not respond before the request timed out")?
 }

@@ -113,6 +113,25 @@ async fn handle_message(
     session_id: &mut Option<String>,
 ) -> Result<ControlFlow<()>> {
     let response = match message {
+        ClientMessage::SetupCursor {
+            bundle_path,
+            enabled,
+        } => {
+            let (sender, receiver) = tokio::sync::oneshot::channel();
+            app.run_on_main_thread(move || {
+                let _ = sender.send(native::setup_cursor(&bundle_path, enabled));
+            })?;
+            match receiver.await? {
+                Ok(()) => ServerMessage::Ack,
+                Err(message) => ServerMessage::Error { message },
+            }
+        }
+        ClientMessage::CursorPosition { position } => {
+            let service = service.clone();
+            let callback_app = app.clone();
+            app.run_on_main_thread(move || service.cursor_position(&callback_app, position))?;
+            return Ok(ControlFlow::Continue(()));
+        }
         ClientMessage::Complete { request } => {
             if request.buffer.len() > 64 * 1024
                 || request.session_id.len() > 200

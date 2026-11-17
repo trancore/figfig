@@ -124,10 +124,7 @@ fn find_terminal_pid() -> i32 {
         let Some((parent, command)) = text.split_once(char::is_whitespace) else {
             break;
         };
-        if command.contains("Terminal.app/")
-            || command.contains("iTerm.app/")
-            || command.contains("iTerm2.app/")
-        {
+        if figfig_core::terminal::terminal_name(command.trim()).is_some() {
             return pid;
         }
         pid = parent.parse().unwrap_or(0);

@@ -1,5 +1,6 @@
 mod bridge;
 mod config;
+mod cursor;
 mod helper;
 mod setup;
 
@@ -12,6 +13,9 @@ use tokio::net::UnixStream;
 const HELP: &str = "figfig — local terminal autocomplete
 
   figfig setup          Install zsh integration (backs up .zshrc)
+  figfig setup zed      Install and enable optional Zed cursor tracking
+  figfig setup zed --remove
+                        Disable and remove Zed cursor tracking
   figfig init zsh       Print zsh integration
   figfig config         Show configuration
   figfig config get KEY
@@ -50,6 +54,16 @@ async fn run() -> Result<()> {
             print!("{}", include_str!("../../../shell/figfig.zsh"));
         }
         Some("setup") if args.len() == 1 => setup::run()?,
+        Some("setup") if args.get(1).map(String::as_str) == Some("zed") && args.len() == 2 => {
+            cursor::setup(false).await?
+        }
+        Some("setup")
+            if args.get(1).map(String::as_str) == Some("zed")
+                && args.get(2).map(String::as_str) == Some("--remove")
+                && args.len() == 3 =>
+        {
+            cursor::setup(true).await?
+        }
         Some("start") => {
             ensure_running().await?;
             println!("figfig popup helper is running in the background.");
@@ -150,7 +164,9 @@ async fn doctor() -> Result<()> {
             if let Some(error) = error {
                 println!("Position tracking: {error}");
             }
-            if !accessibility {
+            if terminal.as_deref() == Some("Zed") {
+                println!("Cursor positioning: InputMethodKit (requires `figfig setup zed`).");
+            } else if !accessibility {
                 bail!("Run figfig permissions to enable terminal cursor positioning.");
             }
         }

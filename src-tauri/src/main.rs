@@ -1,4 +1,5 @@
 mod connection;
+mod cursor;
 mod native;
 mod service;
 

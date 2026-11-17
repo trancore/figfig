@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>dev.figfig.cursor</string>
+  <key>CFBundleName</key><string>figfig Cursor Tracking</string>
+  <key>CFBundleExecutable</key><string>figfig-cursor</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+  <key>CFBundleVersion</key><string>@VERSION@</string>
+  <key>CFBundleShortVersionString</key><string>@VERSION@</string>
+  <key>LSMinimumSystemVersion</key><string>13.0</string>
+  <key>LSBackgroundOnly</key><true/>
+  <key>InputMethodConnectionName</key><string>dev.figfig.cursor.connection</string>
+  <key>InputMethodServerControllerClass</key><string>FigfigCursorController</string>
+  <key>InputMethodType</key><string>palette</string>
+  <key>ComponentInvisibleInSystemUI</key><true/>
+  <key>TISInputSourceID</key><string>dev.figfig.cursor</string>
+  <key>TISIntendedLanguage</key><string>en</string>
+  <key>tsInputMethodIconFileKey</key><string>icon.icns</string>
+</dict></plist>

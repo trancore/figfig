@@ -9,7 +9,7 @@ description: Supported operating systems, terminals, shell syntax, and verificat
 | --- | --- |
 | OS | macOS 13 or later |
 | Shell | zsh 5.9 or later |
-| Terminal | Terminal.app and iTerm2 |
+| Terminal | Terminal.app, iTerm2, and Zed's integrated terminal |
 | Keymaps | emacs and vi insert mode |
 | Candidate sources | Local command definitions, PATH, files, Git branches, and package scripts |
 
@@ -32,6 +32,8 @@ See [Adding command definitions](../development/specifications.md) to define add
 Cursor position comes from macOS Accessibility. The popup is shown when a supported terminal is in the foreground and its PID matches the shell's terminal PID.
 
 ## Verification status {#検証状況}
+
+Zed requires the optional InputMethodKit cursor tracker installed with `figfig setup zed`. Stable, Preview, and Nightly app processes are recognized. Geometry conversion, stale-response rejection, and native tracker IPC are covered by automated tests. Actual popup placement, IME use, and pane switching with the registered tracker require manual verification.
 
 Automated tests, production builds, signing, and communication with the real helper have been checked on Apple Silicon and macOS. Basic popup display in Terminal.app and iTerm2 was manually confirmed before the CLI-only workflow was introduced.
 

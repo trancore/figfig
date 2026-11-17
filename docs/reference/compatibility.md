@@ -9,11 +9,13 @@ description: OS・ターミナル・構文の対応範囲と、実機確認の�
 | --- | --- |
 | OS | macOS 13以降 |
 | シェル | zsh 5.9以降 |
-| ターミナル | Terminal.app、iTerm2 |
+| ターミナル | Terminal.app、iTerm2、Zedの内蔵ターミナル |
 | シェルのキー設定 | emacs、viの挿入モード |
 | 候補生成 | ローカルのコマンド定義、PATH、ファイル、Gitブランチ、package scripts |
 
 SSH先、tmux内、他のシェル・ターミナルは初期版の対象範囲外です。
+
+Zedでは `figfig setup zed` による追加のカーソル位置取得用ヘルパーの登録が必要です。Zed／Zed Preview／Zed Nightlyのプロセスを識別します。導入手順は[インストールガイド](../getting-started/installation.md#zedの内蔵ターミナルで使う)を参照してください。
 
 ## 入力の解析
 
@@ -31,7 +33,11 @@ git、brew、npm、pnpm、dockerの主要なサブコマンドとオプション
 
 入力位置はmacOS Accessibilityから取得します。対応するターミナルが最前面にあり、シェルのターミナルPIDと一致する場合にポップアップを表示します。
 
+ZedではInputMethodKitでカーソル座標を取得します。別の位置やペインへ移動した場合は候補を閉じ、新しいシェル入力を待ちます。位置取得に失敗した場合やヘルパー未登録時も候補を閉じ、`figfig doctor`に診断を表示します。
+
 ## 検証状況
+
+Zed連携の座標変換、古い応答の破棄、ネイティブヘルパーとローカルソケットの通信は自動テストで検証します。入力メソッドを登録したZedでの実際の表示・IME・ペイン切り替えは別途実機確認が必要です。
 
 Apple Silicon・macOSで、自動テスト、本番ビルド、署名、実ヘルパーとの通信を確認しています。Terminal.appとiTerm2での基本表示はCLI化前の版で手動確認済みです。
 

@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import select
+import socket
 import subprocess
 import tempfile
 
@@ -50,6 +51,15 @@ def main():
             doctor = subprocess.run([str(CLI), "doctor"], env=env, capture_output=True, text=True, timeout=5)
             assert "Protocol: 1" in doctor.stdout, doctor.stderr
             print("PASS: CLI doctor reaches the native helper")
+            with socket.socket(socket.AF_UNIX) as client:
+                client.connect(str(base / "runtime/app.sock"))
+                with client.makefile("rwb", buffering=0) as stream:
+                    assert json.loads(stream.readline())["type"] == "preferences"
+                    message = {"type": "setupCursor", "bundle_path": "/invalid.app", "enabled": False}
+                    stream.write((json.dumps(message) + "\n").encode())
+                    result = json.loads(stream.readline())
+                    assert result == {"type": "error", "message": "Invalid cursor tracker bundle location"}, result
+            print("PASS: native cursor setup rejects invalid bundle paths without registering an input method")
             fields = ["complete", "1", "6", str(ROOT), "git ch", "0"]
             bridge.stdin.write(("\0".join(fields) + "\0").encode())
             bridge.stdin.flush()

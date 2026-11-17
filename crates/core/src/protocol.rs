@@ -16,6 +16,19 @@ pub struct CompletionRequest {
     pub terminal_pid: i32,
 }
 
+/// Geometry only, reported by the optional macOS cursor input method.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CursorPosition {
+    pub request_id: String,
+    pub terminal_pid: i32,
+    pub x: f64,
+    /// AppKit screen coordinates, with a bottom-left origin.
+    pub y: f64,
+    pub height: f64,
+    pub focus: u64,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Candidate {
@@ -42,6 +55,13 @@ pub struct CompletionResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ClientMessage {
+    SetupCursor {
+        bundle_path: String,
+        enabled: bool,
+    },
+    CursorPosition {
+        position: CursorPosition,
+    },
     Complete {
         request: CompletionRequest,
     },

@@ -24,6 +24,8 @@ figfig doctor
 
 If `figfig complete 'git ch'` returns entries in `candidates`, completion data is being generated. Check the position and permission information in `doctor` when diagnosing popup display.
 
+For Zed, also run `figfig setup zed`, allow macOS to enable “figfig Cursor Tracking”, then restart Zed and open a new zsh terminal. If registration is not recognized, log out and back in before retrying. Zed uses InputMethodKit for cursor positioning; granting Accessibility alone is insufficient.
+
 ## The helper cannot be found {#ヘルパーが見つからない}
 
 For source builds, check that both of the following paths exist.

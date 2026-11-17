@@ -46,6 +46,8 @@ Candidate labels and icons use seven type-specific colors. The selected row has 
 
 ## Position and focus {#位置フォーカス}
 
+Zed uses an optional palette InputMethodKit helper embedded in the CLI and registered with `figfig setup zed`. The popup helper requests geometry via a distributed notification. The tracker returns a `cursorPosition` message containing only a request ID, PID, coordinates, line height, and focus identifier through the private Unix socket. It does not handle keystrokes or read text. Replies must match the request ID and PID within 500ms. Position changes close visible suggestions to avoid moving them into another pane or the editor.
+
 At startup, the bridge walks its parent processes to identify Terminal.app or iTerm2. The helper shows the popup when that PID matches the foreground application and the focused element exposes its insertion position.
 
 Position lookup uses Accessibility's `AXSelectedTextRange` and `AXBoundsForRange`. If bounds for a zero-length range are unavailable, it uses the right edge of the preceding character. Coordinates are converted to AppKit screen coordinates, and the popup can move above the cursor near the screen edge. Visible position and focus are checked every 120ms.

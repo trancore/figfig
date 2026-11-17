@@ -11,8 +11,8 @@ figfig is a CLI tool that adds a completion popup and inline history suggestions
 | --- | --- |
 | OS | macOS 13 or later |
 | Shell | zsh 5.9 or later |
-| Terminal | Terminal.app or iTerm2 |
-| Permission | Accessibility access to read the terminal cursor position |
+| Terminal | Terminal.app, iTerm2, or Zed's integrated terminal |
+| Permission | Accessibility for Terminal.app/iTerm2; optional cursor tracker approval for Zed |
 
 See [Compatibility](../reference/compatibility.md) for the supported scope and verification status.
 
@@ -60,6 +60,20 @@ figfig permissions
 ```
 
 Enable figfig in the System Settings panel that opens. Depending on your macOS version, the permission appears as Accessibility or Device Control and Data Access. This allows figfig to read the cursor position in the foreground terminal and place suggestions beside it.
+
+## Use Zed's integrated terminal {#zedの内蔵ターミナルで使う}
+
+After enabling the usual zsh integration, run:
+
+```bash
+figfig setup zed
+```
+
+This installs `~/Library/Input Methods/figfig Cursor.app`. Allow “figfig Cursor Tracking” when macOS asks to enable it, then restart Zed and open a new zsh terminal. If macOS has not recognized the registration, log out and back in, then retry the command.
+
+The tracker is a palette input method. It requests cursor geometry in Zed without handling keystrokes, reading text, or changing your keyboard layout or Japanese input method. Suggestions use the same separate popup window.
+
+Run `figfig setup zed` again after upgrading. Before removing the CLI, uninstall the optional tracker with `figfig setup zed --remove`.
 
 ## Verify the integration {#動作を確認する}
 

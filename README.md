@@ -4,7 +4,9 @@
 
 zshにFig風の補完ポップアップと、履歴に基づくインライン予測を追加するCLIツールです。導入・設定・一時停止はすべて`figfig`コマンドで操作します。
 
-**対象：macOS 13以降、zsh 5.9以降、Terminal.app／iTerm2。** ポップアップの表示位置を取得するため、初回のみmacOSのアクセシビリティ権限が必要です。
+**対象：macOS 13以降、zsh 5.9以降、Terminal.app／iTerm2／Zedの内蔵ターミナル。** Terminal.app／iTerm2ではmacOSのアクセシビリティ権限、Zedでは追加のカーソル位置取得用ヘルパーが必要です。
+
+Zedでは通常のzsh連携に加えて `figfig setup zed` を実行し、macOSの「figfig Cursor Tracking」の有効化を許可してください。キーボード入力を処理しないパレット型入力メソッドを登録し、Zedのカーソル座標だけを既存のポップアップへ渡します。登録後はZedを再起動します。削除は `figfig setup zed --remove` で行えます。
 
 ## 導入
 
@@ -131,6 +133,6 @@ The compact popup displays one candidate per row and uses seven colors for candi
 
 Use `figfig config`, `figfig config set history false`, `figfig pause`, `figfig resume`, and `figfig doctor` from your terminal. Setup preserves the existing `.zshrc`, creates a backup, and avoids duplicate entries. Settings are persistent and propagated to connected shells; pause is temporary.
 
-Build with `pnpm install --frozen-lockfile --ignore-scripts` and `pnpm run build:release`. The Homebrew formula installs the CLI in `bin` and its native popup helper privately in `libexec`. The public tap `trancore/tap` (GitHub repository: `trancore/homebrew-tap`) is being prepared. After publication, install with `brew install trancore/tap/figfig`. Until then, use the source build above. Maintainers can follow the [release guide](website/i18n/en/docusaurus-plugin-content-docs/current/releasing.md). Terminal.app and iTerm2 on macOS are the initial targets; SSH, tmux, other shells, and AI are outside the initial release.
+Build with `pnpm install --frozen-lockfile --ignore-scripts` and `pnpm run build:release`. The Homebrew formula installs the CLI in `bin` and its native popup helper privately in `libexec`. The public tap `trancore/tap` (GitHub repository: `trancore/homebrew-tap`) is being prepared. After publication, install with `brew install trancore/tap/figfig`. Until then, use the source build above. Maintainers can follow the [release guide](website/i18n/en/docusaurus-plugin-content-docs/current/releasing.md). Terminal.app, iTerm2, and Zed’s integrated terminal are supported on macOS. Zed requires the optional cursor tracker installed with `figfig setup zed`; SSH, tmux, other shells, and AI are outside the initial release.
 
 MIT License.

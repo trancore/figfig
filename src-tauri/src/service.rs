@@ -8,10 +8,11 @@ use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager};
 use tokio::sync::{broadcast, Semaphore};
 
-pub const POPUP_WIDTH: f64 = 440.0;
+pub const POPUP_WIDTH: f64 = 320.0;
 pub fn popup_height(candidate_count: usize) -> f64 {
-    const CHROME_HEIGHT: f64 = 64.0;
-    const ROW_HEIGHT: f64 = 44.0;
+    // Matches styles.css: a 20px footer and a 1px border on each edge.
+    const CHROME_HEIGHT: f64 = 22.0;
+    const ROW_HEIGHT: f64 = 20.0;
     CHROME_HEIGHT + candidate_count as f64 * ROW_HEIGHT
 }
 

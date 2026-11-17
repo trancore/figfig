@@ -26,14 +26,11 @@
   "homepage.demo.caption": {
     "message": "Completion popup example"
   },
-  "homepage.demo.select": {
-    "message": "Select"
+  "homepage.demo.accept": {
+    "message": "Insert with Tab or Enter"
   },
-  "homepage.demo.insert": {
-    "message": "Insert"
-  },
-  "homepage.demo.close": {
-    "message": "Close"
+  "homepage.demo.note": {
+    "message": "Candidates are colored by type, with the selected candidate's description shown in the footer."
   },
   "homepage.guides.label": {
     "message": "Find documentation by task"

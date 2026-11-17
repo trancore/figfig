@@ -1,14 +1,28 @@
+# Dependencies
 node_modules/
 .pnpm-store/
+
+# Build outputs and generated files
 dist/
 target/
 src-tauri/gen/
-.DS_Store
+website/.docusaurus/
+website/build/
+
+# Tests and caches
 coverage/
 __pycache__/
+
+# Logs
 *.log
+
+# Environment variables
 .env
 .env.*
 !.env.example
-website/.docusaurus/
-website/build/
+
+# Development tools
+.serena/
+
+# OS files
+.DS_Store

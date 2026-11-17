@@ -1,12 +1,8 @@
 ---
-description: 正確な対象範囲、レビューしやすい説明、検証結果を含むGitHub Pull Requestを作成・更新します。
-metadata:
-    github-path: skills/pull-request-workflow
-    github-ref: refs/heads/main
-    github-repo: https://github.com/trancore/skills-repository
-    github-tree-sha: c4112ab6f1bb25c486d8f031cdbee28774e72ee0
 name: pull-request-workflow
+description: 正確な対象範囲、レビューしやすい説明、検証結果を含むGitHub Pull Requestを作成・更新します。
 ---
+
 # Pull Request作業手順
 
 ユーザーがGitHub Pull Requestの作成、編集、更新、準備を依頼したときに使用する。

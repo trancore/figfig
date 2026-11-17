@@ -1,12 +1,8 @@
 ---
-description: Git差分、ブランチ、Pull Requestを確認し、正確性、リグレッション、セキュリティ、テスト・ドキュメント不足をレビューします。
-metadata:
-    github-path: skills/code-review-workflow
-    github-ref: refs/heads/main
-    github-repo: https://github.com/trancore/skills-repository
-    github-tree-sha: 2ed075c55d79fe35c6157d1d09d58f5d54ca7d5f
 name: code-review-workflow
+description: Git差分、ブランチ、Pull Requestを確認し、正確性、リグレッション、セキュリティ、テスト・ドキュメント不足をレビューします。
 ---
+
 # コードレビュー作業手順
 
 ユーザーがコードレビューを依頼したとき、またはコミット、ブランチ、Pull Requestの指摘事項を求めたときに使用する。

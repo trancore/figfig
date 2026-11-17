@@ -1,12 +1,8 @@
 ---
-description: 既存の変更を保持し、リポジトリの状態を確認しながらGitの作業ブランチを安全に作成・切り替えます。
-metadata:
-    github-path: skills/branch-workflow
-    github-ref: refs/heads/main
-    github-repo: https://github.com/trancore/skills-repository
-    github-tree-sha: 2d7d05d5e017e26db91c3ec74b8a2f3c3f0307a3
 name: branch-workflow
+description: 既存の変更を保持し、リポジトリの状態を確認しながらGitの作業ブランチを安全に作成・切り替えます。
 ---
+
 # ブランチ作業手順
 
 ユーザーがGitの作業ブランチの作成、チェックアウト、名前変更、切り替えを依頼したときに使用する。

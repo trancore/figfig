@@ -3,6 +3,14 @@ title: Verification
 description: Automated results, native checks, and remaining verification for the initial release.
 ---
 
+## Popup UI results recorded on 2026-11-17 {#2026-11-17の補完ui確認結果}
+
+- Updated the popup to a 320px-wide list with 20px rows, seven candidate-type colors, selection markers, and footer descriptions.
+- All 3 UI tests passed with `pnpm test`, covering selection-driven descriptions and ARIA associations, an empty candidate list, and the `folder` fallback for directories without descriptions.
+- `pnpm exec tsc --noEmit`, `pnpm exec vite build`, `cargo check -p figfig-desktop --locked --offline`, and `cargo fmt --all -- --check` passed.
+- Safari previews covered 1, 4, and 12 candidates, selection changes, long-label and description truncation, and candidate-type colors.
+- Rendering in the updated native Tauri window remains unverified. Browser previews do not verify positioning, focus, or insertion in a real terminal.
+
 ## Results recorded on 2026-11-16 {#2026-11-16の確認結果}
 
 - TypeScript checking, 2 popup UI tests, 20 Rust tests, 5 CLI integration tests, 6 zsh integration tests, and 2 formula-generation tests were run on Apple Silicon and macOS.
@@ -18,7 +26,7 @@ description: Automated results, native checks, and remaining verification for th
 | Level | Target | Dependencies | Command |
 | --- | --- | --- | --- |
 | Unit | Parsing, quoting, session state, late responses, frames, and CLI NUL-delimited input | Pure logic and in-memory streams | `cargo test -p figfig-core --lib`, `cargo test -p figfig-cli` |
-| Component | Selection, descriptions, and empty candidate lists | React and jsdom | `pnpm test` |
+| Component | Selection and footer-description associations, empty candidate lists, and directories without descriptions | React and jsdom | `pnpm test` |
 | Integration | Paths, Git branches, and package scripts | Temporary directories and real Git | `cargo test -p figfig-core --test completions` |
 | Integration | ZLE, Rust bridge, socket, Enter, Tab, arrows, history, and disconnects | Real zsh, PTY, Rust CLI, and a test backend | `pnpm run test:shell` |
 | Integration | CLI setup, validation, preference notifications, pause, and automatic startup | Temporary HOME and ZDOTDIR, real CLI, and an isolated helper | `pnpm run test:shell` |

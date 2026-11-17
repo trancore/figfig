@@ -10,6 +10,14 @@
 - リリース用・tap用ワークフローのactionlint、日英ドキュメントの型検査・サイトビルドが成功。
 - Intelでの今回のFormulaのビルド、GitHub上でのDraft Release作成、公開URLからの正式tap導入、バージョン間のアップグレード、実ターミナルでの今回のネイティブ操作は未確認。公開後のCI・受け入れ確認に残す。
 
+## 2026-11-17の補完UI確認結果
+
+- 幅320px・行高20pxの1行リスト、候補種別ごとの7色の配色、選択行のマーカー、フッターの説明表示へ更新。
+- `pnpm test`でUIテスト3件が成功。選択変更に伴う説明とARIAの関連付け、空の候補一覧、説明がないディレクトリの`folder`表示を確認。
+- `pnpm exec tsc --noEmit`、`pnpm exec vite build`、`cargo check -p figfig-desktop --locked --offline`、`cargo fmt --all -- --check`が成功。
+- Safariのプレビューで候補1・4・12件、選択変更、長い候補名・説明の省略表示、種類ごとの配色を確認。
+- 更新後のTauri実ウィンドウの描画は未確認。ブラウザの確認結果を、実ターミナルでの位置・フォーカス・挿入操作の確認済みとは扱わない。
+
 ## 2026-11-16の確認結果
 
 - Apple Silicon・macOS環境でTypeScriptの型検査、ポップアップUIテスト2件、Rustテスト20件、CLI統合テスト5件、zsh統合テスト6件、Formula生成テスト2件を実行。
@@ -25,7 +33,7 @@
 | レベル | 対象 | 実依存／モック | コマンド |
 | --- | --- | --- | --- |
 | Unit | 入力解析、引用、状態更新、遅延応答、通信フレーム、CLIのNUL区切り入力 | ファイルなし、インメモリのストリーム | `cargo test -p figfig-core --lib`、`cargo test -p figfig-cli` |
-| Component | 選択行、説明、空の候補一覧 | React・jsdom | `pnpm test` |
+| Component | 選択行とフッター説明の関連付け、空の候補一覧、説明なしのディレクトリ | React・jsdom | `pnpm test` |
 | Integration | パス、Gitブランチ、package scripts | 一時ディレクトリと実Git | `cargo test -p figfig-core --test completions` |
 | Integration | ZLE・Rustブリッジ・ソケット、Enter、Tab、上下、履歴、接続断 | 実zsh・PTY・Rust CLI、テスト用バックエンド | `pnpm run test:shell` |
 | Integration | CLIの初期設定・検証・設定通知・一時停止・自動起動 | 一時HOME／ZDOTDIR、実CLI、独立したテスト用ヘルパー | `pnpm run test:shell` |

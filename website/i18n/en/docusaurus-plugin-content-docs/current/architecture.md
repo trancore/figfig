@@ -38,6 +38,12 @@ operation, revision, cursor, cwd, buffer, selected
 
 Bridge-to-shell responses use `R revision start end visible count [quotedInsertion appendSpace]...`. Preference messages use `P historyEnabled` and reflect settings and pause state.
 
+## Popup rendering {#ポップアップの描画}
+
+The React `Popup` renders a 320px-wide candidate list with 20px rows and a 20px footer for the selected candidate's description. The helper's `popup_height()` includes the 1px border on each edge and calculates the window height as `22 + candidate count × 20`. Changes to row height or vertical spacing must update both the CSS and this calculation.
+
+Candidate labels and icons use seven type-specific colors. The selected row has a matching tinted background and a left-edge marker. The listbox's `aria-activedescendant` and each candidate's `aria-selected` expose the selection, while the selected candidate's `aria-describedby` references the footer description. If the description is empty, the footer uses the candidate type, showing `folder` for directories.
+
 ## Position and focus {#位置フォーカス}
 
 At startup, the bridge walks its parent processes to identify Terminal.app or iTerm2. The helper shows the popup when that PID matches the foreground application and the focused element exposes its insertion position.

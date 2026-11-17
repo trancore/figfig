@@ -43,18 +43,27 @@ export default function Home(): ReactNode {
             <div className={styles.terminalContent}>
               <p className={styles.prompt}><span>~/projects</span> $ git ch<span className={styles.cursor} aria-hidden="true">▏</span></p>
               <div className={styles.popup}>
-                <div className={styles.popupHeader}>figfig</div>
-                <div className={styles.candidate}>
-                  <span aria-hidden="true">↳</span>
-                  <div><strong>checkout</strong><small>Switch branches or restore files</small></div>
-                  <kbd>↵</kbd>
-                </div>
+                <ul className={styles.popupCandidates}>
+                  {['checkout', 'cherry-pick'].map((candidate, index) => (
+                    <li key={candidate} className={styles.candidate} data-selected={index === 0}>
+                      <svg className={styles.candidateIcon} aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 4v8a3 3 0 0 0 3 3h10m-4-4 4 4-4 4" />
+                      </svg>
+                      <span className={styles.candidateLabel}>{candidate}</span>
+                    </li>
+                  ))}
+                </ul>
                 <div className={styles.popupFooter}>
-                  <span>↑ ↓ <Translate id="homepage.demo.select">選択</Translate></span>
-                  <span>tab <Translate id="homepage.demo.insert">挿入</Translate></span>
-                  <span>esc <Translate id="homepage.demo.close">閉じる</Translate></span>
+                  <span className={styles.popupBrand} aria-hidden="true"><span>fig</span><span>fig</span></span>
+                  <span className={styles.popupDescription}>Switch branches or restore files</span>
+                  <span className={styles.popupHint} aria-label={translate({ id: 'homepage.demo.accept', message: 'Tab または Enter で挿入' })}>
+                    <kbd>tab</kbd><kbd>↵</kbd>
+                  </span>
                 </div>
               </div>
+              <p className={styles.demoNote}>
+                <Translate id="homepage.demo.note">候補は種類ごとに色分けされ、選択中の候補の説明が下部に表示されます。</Translate>
+              </p>
             </div>
           </figure>
         </section>

@@ -8,13 +8,17 @@ zshにFig風の補完ポップアップと、履歴に基づくインライン�
 
 ## 導入
 
-Homebrewの公開tapはまだ作成していません。公開後は次の流れで導入します。
+Homebrew tap `trancore/tap`（GitHubリポジトリ: `trancore/homebrew-tap`）は公開準備中です。初回ReleaseとFormulaの公開後は、次の流れで導入できます。
+
+現在すぐに試す場合は、[ソースからビルド](#ソースからビルド)を利用してください。公開作業は[リリース手順](docs/releasing.md)にまとめています。
 
 ```sh
-brew install OWNER/tap/figfig
+brew install trancore/tap/figfig
 figfig setup
 figfig permissions
 ```
+
+Homebrew版もソースからビルドするため、Xcode Command Line Toolsが必要です。Node.js・pnpm・RustはHomebrewがビルド用依存として導入します。
 
 `figfig setup`は`.zshrc`の末尾にzsh連携を追加します。既存ファイルは`.zshrc.figfig-backup`へ保存し、再実行しても初期化行を重複させません。`ZDOTDIR`を設定している場合は、そのディレクトリの`.zshrc`を使います。
 
@@ -127,6 +131,6 @@ The compact popup displays one candidate per row and uses seven colors for candi
 
 Use `figfig config`, `figfig config set history false`, `figfig pause`, `figfig resume`, and `figfig doctor` from your terminal. Setup preserves the existing `.zshrc`, creates a backup, and avoids duplicate entries. Settings are persistent and propagated to connected shells; pause is temporary.
 
-Build with `pnpm install --frozen-lockfile --ignore-scripts` and `pnpm run build:release`. The Homebrew formula installs the CLI in `bin` and its native popup helper privately in `libexec`. A public tap has not been published yet. Terminal.app and iTerm2 on macOS are the initial targets; SSH, tmux, other shells, and AI are outside the initial release.
+Build with `pnpm install --frozen-lockfile --ignore-scripts` and `pnpm run build:release`. The Homebrew formula installs the CLI in `bin` and its native popup helper privately in `libexec`. The public tap `trancore/tap` (GitHub repository: `trancore/homebrew-tap`) is being prepared. After publication, install with `brew install trancore/tap/figfig`. Until then, use the source build above. Maintainers can follow the [release guide](website/i18n/en/docusaurus-plugin-content-docs/current/releasing.md). Terminal.app and iTerm2 on macOS are the initial targets; SSH, tmux, other shells, and AI are outside the initial release.
 
 MIT License.

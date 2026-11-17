@@ -35,7 +35,7 @@ export default function Home(): ReactNode {
               </Link>
             </div>
             <p className={styles.releaseNote}>
-              <Translate id="homepage.releaseNote">Homebrew tapは公開準備中です。現在はソースから導入できます。</Translate>
+              <Translate id="homepage.releaseNote">Homebrew tap（trancore/tap）は公開準備中です。現在はソースから導入できます。</Translate>
             </p>
           </div>
           <figure className={styles.terminal}>

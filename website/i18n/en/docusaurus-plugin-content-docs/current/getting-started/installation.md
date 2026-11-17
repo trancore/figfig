@@ -18,7 +18,7 @@ See [Compatibility](../reference/compatibility.md) for the supported scope and v
 
 ## Build from source {#ソースから導入する}
 
-The public Homebrew tap is being prepared. Use the site's GitHub link to obtain the source, then run the build commands from the root of the figfig source directory.
+The Homebrew tap `trancore/tap` (GitHub repository: `trancore/homebrew-tap`) is being prepared. For now, use the site's GitHub link to obtain the source, then run the build commands from the root of the figfig source directory.
 
 Install Node.js 24.15+ on the 24.x line, or 26+, pnpm 12.21.0, Rust 1.90 or later, and the Xcode Command Line Tools.
 
@@ -75,10 +75,22 @@ If suggestions do not appear, see [Troubleshooting](../guides/troubleshooting.md
 
 ## Planned Homebrew installation {#homebrewでの導入予定}
 
-The packaging supports installation through a named Homebrew tap. This page will include the actual installation command once the public tap is available.
+After the first GitHub Release and formula are published, install with the following command. Until then, use the source build above.
+
+```bash
+brew install trancore/tap/figfig
+figfig setup
+figfig permissions
+```
+
+Homebrew also builds from source. Install the Xcode Command Line Tools first; Homebrew installs Node.js, pnpm, and Rust as build dependencies. The CLI is installed at `bin/figfig`, with the private helper at `libexec/figfig.app`.
+
+To upgrade, run `figfig stop`, `brew update`, and `brew upgrade trancore/tap/figfig`, then open a new zsh session. macOS may ask you to grant permission again after an upgrade.
 
 ## Remove shell integration {#連携を解除する}
 
 Run `figfig stop` to stop the helper, then remove the managed block from `# >>> figfig >>>` through `# <<< figfig <<<` in `.zshrc`. If you enabled integration manually, remove the initialization line you added.
 
 To remove a source build, check and remove its CLI and helper files along with any PATH entry you added. Use `figfig config path` to locate saved preferences.
+
+For a Homebrew installation, remove the shell integration first, then run `brew uninstall trancore/tap/figfig`. Saved preferences are retained.

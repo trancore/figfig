@@ -35,4 +35,6 @@ git、brew、npm、pnpm、dockerの主要なサブコマンドとオプション
 
 Apple Silicon・macOSで、自動テスト、本番ビルド、署名、実ヘルパーとの通信を確認しています。Terminal.appとiTerm2での基本表示はCLI化前の版で手動確認済みです。
 
+Homebrew配布は公開準備中です。Apple Silicon・macOS 27.0.1では、ローカルの検証専用tapからソースビルド・インストール・Formulaの監査・テスト・削除を確認しました。公開Releaseと正式tapからの導入は、公開後に確認します。手順は[リリース手順](../releasing.md)を参照してください。
+
 Intelでのビルド、IME、画面倍率の異なる複数画面、フルスクリーンなどの詳細操作と、公開tapからの導入・更新・削除は未確認です。具体的な結果と確認手順は[検証記録](../verification.md)を参照してください。

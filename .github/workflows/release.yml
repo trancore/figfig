@@ -3,45 +3,73 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag (for example v0.1.0)
+        required: true
+        type: string
 permissions:
   contents: read
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 jobs:
   source-and-formula:
     runs-on: macos-15
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-      - name: Verify version and generated specifications
+      - name: Verify generated specifications and packaging
         run: |
           pnpm install --frozen-lockfile --ignore-scripts
           pnpm run check
-          python3 - <<'PY'
-          import json, os, tomllib
-          version = json.load(open('package.json'))['version']
-          assert os.environ['GITHUB_REF_NAME'] == 'v' + version, 'Run on a matching version tag'
-          assert tomllib.load(open('Cargo.toml', 'rb'))['workspace']['package']['version'] == version
-          assert json.load(open('src-tauri/tauri.conf.json'))['version'] == version
-          PY
-      - name: Generate immutable source artifact and formula
+          python3 -m unittest discover -s tests -p 'formula_test.py' -v
+          python3 -m unittest discover -s tests -p 'release_test.py' -v
+      - name: Generate source archive and formula from the tag
         env:
           REPOSITORY: ${{ github.repository }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          archive="figfig-${version}-source.tar.gz"
-          git archive --format=tar.gz --prefix="figfig-${version}/" --output="$archive" "$GITHUB_SHA"
-          checksum=$(shasum -a 256 "$archive" | cut -d ' ' -f 1)
-          python3 scripts/generate-formula.py --repository "$REPOSITORY" --version "$version" --sha256 "$checksum"
-          ruby -c Formula/figfig.rb
-          shasum -a 256 "$archive" > SHA256SUMS
+          python3 scripts/prepare-release.py --repository "$REPOSITORY" --tag "$RELEASE_TAG"
+          ruby -c release/Formula/figfig.rb
+          cd release
+          shasum -a 256 -c SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: source-and-homebrew-formula
-          path: |
-            figfig-*-source.tar.gz
-            Formula/figfig.rb
-            SHA256SUMS
+          if-no-files-found: error
+          path: release/
+
+  draft-release:
+    needs: source-and-formula
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: source-and-homebrew-formula
+          path: release
+      - name: Create draft with all release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" --verify-tag --draft \
+            --title "figfig $RELEASE_TAG" --notes-file release/release-notes.md \
+            release/figfig-*-source.tar.gz release/SHA256SUMS release/Formula/figfig.rb
+          echo "Draft prepared. Publish it, verify the public source URL, then update trancore/homebrew-tap manually." >> "$GITHUB_STEP_SUMMARY"

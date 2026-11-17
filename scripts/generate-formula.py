@@ -14,24 +14,27 @@ def generate(repository, version, sha256, source_url=None):
     url = source_url or f"https://github.com/{repository}/releases/download/v{version}/figfig-{version}-source.tar.gz"
     if not re.fullmatch(r"(?:https://|file:///)[A-Za-z0-9_./%:+~-]+", url):
         raise ValueError("source URL must be a literal HTTPS or file URL")
+    # Homebrew infers the version from our release filenames. Retain an explicit
+    # version for local overrides such as file:///tmp/source.tar.gz.
+    version_line = "" if source_url is None or url.endswith(f"/figfig-{version}-source.tar.gz") else f'  version "{version}"\n'
     return f'''class Figfig < Formula
   desc "Local autocomplete and inline suggestions for your existing terminal"
   homepage "https://github.com/{repository}"
   url "{url}"
-  version "{version}"
-  sha256 "{sha256.lower()}"
+{version_line}  sha256 "{sha256.lower()}"
   license "MIT"
 
-  depends_on :macos
-  depends_on macos: :ventura
   depends_on "node" => :build
   depends_on "pnpm@12" => :build
   depends_on "rust" => :build
+  depends_on macos: :ventura
 
   def install
     ENV["MACOSX_DEPLOYMENT_TARGET"] = "13.0"
     ENV["PNPM_HOME"] = (buildpath/".pnpm").to_s
-    ENV.prepend_path "PATH", Formula["pnpm@12"].opt_bin
+    ENV["XDG_DATA_HOME"] = (buildpath/".local/share").to_s
+    ENV["XDG_CACHE_HOME"] = (buildpath/".cache").to_s
+    ENV.prepend_path "PATH", formula_opt_bin("pnpm@12")
     system "pnpm", "install", "--frozen-lockfile", "--ignore-scripts", "--store-dir", buildpath/".pnpm-store"
     system "pnpm", "run", "build:release"
     bin.install "target/release/figfig"
@@ -55,6 +58,8 @@ def generate(repository, version, sha256, source_url=None):
   end
 
   test do
+    assert_path_exists libexec/"figfig.app/Contents/MacOS/figfig-desktop"
+    system "/usr/bin/codesign", "--verify", "--deep", "--strict", libexec/"figfig.app"
     assert_match version.to_s, shell_output("#{{bin}}/figfig --version")
     result = JSON.parse(shell_output("#{{bin}}/figfig complete 'git ch' '#{{testpath}}'"))
     assert result.fetch("candidates").any? {{ |candidate| candidate.fetch("label") == "checkout" }}

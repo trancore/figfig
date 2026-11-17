@@ -18,7 +18,7 @@ figfigはzshに補完ポップアップと履歴に基づくインライン予�
 
 ## ソースから導入する
 
-Homebrewの公開tapは準備中です。サイトのGitHubリンクからソースを取得し、figfigソースのルートディレクトリでビルドします。
+Homebrew tap `trancore/tap`（GitHubリポジトリ: `trancore/homebrew-tap`）は公開準備中です。現在はサイトのGitHubリンクからソースを取得し、figfigソースのルートディレクトリでビルドします。
 
 Node.js 24.15以降の24系、または26以降、pnpm 12.21.0、Rust 1.90以降、Xcode Command Line Toolsを用意してください。
 
@@ -75,10 +75,22 @@ figfig doctor
 
 ## Homebrewでの導入予定
 
-公開tapを用意した後、配布先のtap名を指定して導入できる構成です。公開先が決まり次第、このページへ実際のインストールコマンドを掲載します。
+初回のGitHub ReleaseとFormulaを公開した後は、次の1コマンドで導入できます。現在は公開準備中のため、上記のソースビルドを利用してください。
+
+```bash
+brew install trancore/tap/figfig
+figfig setup
+figfig permissions
+```
+
+Homebrew版もソースからビルドします。Xcode Command Line Toolsが必要で、Node.js・pnpm・RustはHomebrewがビルド用依存として導入します。CLIは `bin/figfig`、ヘルパーは `libexec/figfig.app` に配置されます。
+
+更新時は `figfig stop`、`brew update`、`brew upgrade trancore/tap/figfig` の順に実行し、新しいzshセッションを開いてください。更新後にmacOSの権限の再設定が必要になる場合があります。
 
 ## 連携を解除する
 
 `figfig stop`でヘルパーを停止し、`.zshrc`の`# >>> figfig >>>`から`# <<< figfig <<<`までの管理用ブロックを削除します。手動で連携した場合は、追加した初期化行を削除してください。
 
 ソースビルド版を削除する場合は、使用中のCLI・ヘルパーの配置と、追加したPATH設定を確認して取り除きます。保存済みの設定の場所は`figfig config path`で確認できます。
+
+Homebrew版は連携を解除した後、`brew uninstall trancore/tap/figfig` で削除します。保存済みのユーザー設定は保持します。

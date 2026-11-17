@@ -82,6 +82,7 @@ _figfig_hide() {
 }
 
 _figfig_history() {
+  region_highlight=( "${(@)region_highlight:#*memo=figfig-history}" )
   POSTDISPLAY=''
   # Keep history inside the shell. Never copy the history file to the app.
   [[ ${FIGFIG_HISTORY_ENABLED:-1} == 1 && -n $BUFFER && $CURSOR == ${#BUFFER} && $KEYMAP != vicmd ]] || return 0
@@ -92,6 +93,7 @@ _figfig_history() {
     line=${history[$key]}
     if [[ $line == "$BUFFER"* && $line != "$BUFFER" && $line != *$'\n'* ]]; then
       POSTDISPLAY=${line[$(( ${#BUFFER} + 1 )),-1]}
+      region_highlight+=( "${#BUFFER} $(( ${#BUFFER} + ${#POSTDISPLAY} )) fg=242 memo=figfig-history" )
       break
     fi
   done
@@ -208,7 +210,6 @@ for _figfig_map in emacs viins; do
   _figfig_bind $_figfig_map '^[' escape send-break
 done
 unset _figfig_map
-zle_highlight+=( 'suffix:fg=8' )
 add-zle-hook-widget line-init _figfig_line_init
 add-zle-hook-widget line-pre-redraw _figfig_redraw
 add-zle-hook-widget line-finish _figfig_line_finish

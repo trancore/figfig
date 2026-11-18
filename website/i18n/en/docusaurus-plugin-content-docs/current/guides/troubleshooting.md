@@ -43,7 +43,7 @@ Check `figfig config get history`. History suggestions require nonempty input, a
 
 ## Key bindings or prompts conflict {#キー操作やプロンプトが競合する}
 
-Load figfig after initializing Oh My Zsh and your prompt. Check overlapping integrations such as `zsh-autosuggestions`, `zsh-autocomplete`, Fig, or Amazon Q that handle the same input or keys.
+Check that `.zshrc` loads figfig after configuring your prompt and key bindings.
 
 Use `figfig pause` to help isolate the problem. The [installation guide](../getting-started/installation.md#連携を解除する) explains how to remove integration.
 

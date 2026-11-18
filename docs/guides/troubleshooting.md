@@ -43,7 +43,7 @@ target/release/bundle/macos/figfig.app
 
 ## キー操作やプロンプトが競合する
 
-zsh連携をOh My Zshやプロンプトの初期化後に読み込みます。`zsh-autosuggestions`、`zsh-autocomplete`、Fig、Amazon Qなど、同じ入力やキーを扱う連携を確認してください。
+`.zshrc`で、figfigの初期化がプロンプトやキーバインドの設定より後にあることを確認してください。
 
 切り分けには`figfig pause`を使えます。連携を外す手順は[インストールガイド](../getting-started/installation.md#連携を解除する)に記載しています。
 

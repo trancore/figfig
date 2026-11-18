@@ -98,7 +98,6 @@ CLIは`target/release/figfig`、描画ヘルパーは`target/release/bundle/maco
 - コマンド置換やリダイレクトなど、未対応の構文では候補を表示しません。任意のFig仕様・zsh補完関数の互換実装ではありません。
 - ポップアップを表示できない状態は `figfig doctor` で診断できます。Zedでは、下部ターミナルが返すカーソルの行・列と推定した表示領域を使ってポップアップを配置できます。行・列を取得できない場合は、前面のZedウィンドウ下部に表示します。
 - SSH先・tmux内・他のシェルとターミナルは初期版の対象外です。
-- `zsh-autosuggestions`、`zsh-autocomplete`、Fig／Amazon Qなど、同じ入力やキーを扱う機能は無効にし、Oh My Zshなどの初期化後に読み込んでください。
 - ヘルパーはローカルのad-hoc署名を使用し、Developer IDによる署名・公証はしていません。更新後に権限の再設定が必要になる場合があります。
 
 公開手順は[リリース手順](docs/releasing.md)、確認済み・未確認の項目は[検証記録](docs/verification.md)、内部構成は[アーキテクチャ](docs/architecture.md)を参照してください。

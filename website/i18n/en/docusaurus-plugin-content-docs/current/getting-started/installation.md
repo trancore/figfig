@@ -45,7 +45,7 @@ printf 'export PATH=%q:$PATH\n' "$PWD/target/release"
 - On the first modification, an existing `.zshrc` is copied to `.zshrc.figfig-backup`.
 - If the managed block or the same initialization line already exists, running setup again skips the append.
 
-Load the integration after Oh My Zsh or other shell initialization. Disable overlapping integrations from Fig, Amazon Q, `zsh-autosuggestions`, or `zsh-autocomplete` if they handle the same input or keys.
+Load figfig after configuring your prompt and key bindings.
 
 If you manage your configuration manually, add this line at the end of `.zshrc`.
 

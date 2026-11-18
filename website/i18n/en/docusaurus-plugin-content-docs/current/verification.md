@@ -77,7 +77,7 @@ Run `figfig setup` and `figfig permissions`, open a new shell, and perform the f
 - With the figfig popup enabled, press Tab when there are no suggestions and again just after inserting a suggestion. Verify that zsh completions stay hidden. Check that stopping the helper, disabling the popup, or pausing figfig restores the original Tab binding.
 - Verify automatic helper startup from the shell and CLI-based control.
 - Verify pause and resume, `config set history false`, preference saving, and loading after restart.
-- Load figfig after Oh My Zsh and common prompt initialization. Disable overlapping completion integrations during these checks.
+- Load figfig after initializing the prompt and verify that completions work.
 
 ## Acceptance criteria {#完了条件}
 

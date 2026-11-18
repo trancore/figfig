@@ -35,18 +35,18 @@ def main():
                 actual = bridge.stdout.readline()
                 assert actual == expected, (actual, expected)
 
-            preference(b"P 1\n")
+            preference(b"P 1 1\n")
             print("PASS: CLI bridge automatically started the packaged popup helper")
             command("config", "set", "history", "false")
-            preference(b"P 0\n")
+            preference(b"P 0 1\n")
             assert json.loads(command("config"))["historyEnabled"] is False
             command("config", "set", "history", "true")
-            preference(b"P 1\n")
+            preference(b"P 1 1\n")
             print("PASS: CLI configuration reaches the running shell bridge")
             command("pause")
-            preference(b"P 0\n")
+            preference(b"P 0 0\n")
             command("resume")
-            preference(b"P 1\n")
+            preference(b"P 1 1\n")
             print("PASS: CLI pause/resume reaches the running shell bridge")
             doctor = subprocess.run([str(CLI), "doctor"], env=env, capture_output=True, text=True, timeout=5)
             assert "Protocol: 1" in doctor.stdout, doctor.stderr

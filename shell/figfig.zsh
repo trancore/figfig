@@ -10,6 +10,7 @@ autoload -Uz add-zle-hook-widget add-zsh-hook
 
 typeset -g _figfig_session="$$-${EPOCHREALTIME}"
 typeset -gi _figfig_revision=0 _figfig_visible=0 _figfig_selected=1
+typeset -gi _figfig_popup_enabled=1
 typeset -gi _figfig_last_cursor=-1
 typeset -gi _figfig_start=0 _figfig_end=0 _figfig_read_fd=-1 _figfig_write_fd=-1
 typeset -g _figfig_last_buffer='' _figfig_suppressed='' _figfig_helper_pid=''
@@ -101,6 +102,7 @@ _figfig_receive() {
   local -a fields=( ${(z)line} )
   if [[ ${fields[1]-} == P ]]; then
     typeset -g FIGFIG_HISTORY_ENABLED=${fields[2]:-1}
+    _figfig_popup_enabled=${fields[3]:-1}
     _figfig_history
     zle -R
     return 0
@@ -200,6 +202,12 @@ _figfig_key() {
   local action=$1
   shift
   case $action in
+    tab)
+      if (( _figfig_read_fd >= 0 && _figfig_popup_enabled )); then
+        _figfig_accept || :
+        return 0
+      fi
+      ;;
     accept)
       _figfig_accept && return 0
       ;;
@@ -253,7 +261,7 @@ _figfig_bind() {
 }
 
 for _figfig_map in emacs viins; do
-  _figfig_bind $_figfig_map '^I' accept expand-or-complete
+  _figfig_bind $_figfig_map '^I' tab expand-or-complete
   _figfig_bind $_figfig_map '^M' accept accept-line
   _figfig_bind $_figfig_map '^J' accept accept-line
   _figfig_bind $_figfig_map '^[[A' up up-line-or-history

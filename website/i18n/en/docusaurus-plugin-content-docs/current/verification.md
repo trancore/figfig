@@ -74,7 +74,7 @@ Run `figfig setup` and `figfig permissions`, open a new shell, and perform the f
 - Check multiline input, wrapped lines, and replacement ranges while editing within a word.
 - Switch between apps, tabs, and iTerm2 panes. Verify dismissal and new suggestions after editing at the destination.
 - Move and resize windows, use full screen and mixed-scale displays, and check placement near the bottom edge of the screen.
-- Remove permission, stop the helper, and disable the popup. Verify ordinary Enter, history, and Tab behavior in these states.
+- With the figfig popup enabled, press Tab when there are no suggestions and again just after inserting a suggestion. Verify that zsh completions stay hidden. Check that stopping the helper, disabling the popup, or pausing figfig restores the original Tab binding.
 - Verify automatic helper startup from the shell and CLI-based control.
 - Verify pause and resume, `config set history false`, preference saving, and loading after restart.
 - Load figfig after Oh My Zsh and common prompt initialization. Disable overlapping completion integrations during these checks.

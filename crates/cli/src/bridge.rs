@@ -82,7 +82,11 @@ pub async fn run(session_id: String) -> Result<()> {
                             && response.revision == latest_revision
                             && !dismissed => write_shell_response(&response)?,
                     ServerMessage::Preferences { settings, paused } => {
-                        println!("P {}", u8::from(settings.history_enabled && !paused));
+                        println!(
+                            "P {} {}",
+                            u8::from(settings.history_enabled && !paused),
+                            u8::from(settings.popup_enabled && !paused),
+                        );
                         std::io::stdout().flush()?;
                     }
                     ServerMessage::Error { message } => eprintln!("figfig: {message}"),

@@ -27,7 +27,7 @@ flowchart LR
 
 ブリッジは新しい更新番号と一致する応答だけをシェルへ渡す。閉じる操作以降の遅い応答は破棄する。シェルも更新番号を確認し、候補と選択状態を保持してキー操作を即時処理する。入力欄を変更する文字列はデータとして扱い、`eval`を使用しない。
 
-シェル→ブリッジは`operation`、`revision`、`cursor`、`cwd`、`buffer`、`detail`の6フィールドをNULで区切る。`detail`は選択操作の候補番号か、Zedで補完を要求するときのカーソル位置（1始まりの行・列を`;`で区切った値）。ブリッジ→シェルは`R revision start end visible count [quotedInsertion appendSpace]...`。`P historyEnabled`は設定・一時停止を反映する。
+シェル→ブリッジは`operation`、`revision`、`cursor`、`cwd`、`buffer`、`detail`の6フィールドをNULで区切る。`detail`は選択操作の候補番号か、Zedで補完を要求するときのカーソル位置（1始まりの行・列を`;`で区切った値）。ブリッジ→シェルは`R revision start end visible count [quotedInsertion appendSpace]...`。`P historyEnabled popupEnabled`は設定・一時停止を反映する。
 
 ## ポップアップの描画
 

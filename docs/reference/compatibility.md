@@ -9,13 +9,21 @@ description: OS・ターミナル・構文の対応範囲と、実機確認の�
 | --- | --- |
 | OS | macOS 13以降 |
 | シェル | zsh 5.9以降 |
-| ターミナル | Terminal.app、iTerm2、Zedの内蔵ターミナル |
+| ターミナル | Terminal.app、iTerm2、VSCode・Cursor・Zed・主要JetBrains IDEの内蔵ターミナル |
 | シェルのキー設定 | emacs、viの挿入モード |
 | 候補生成 | ローカルのコマンド定義、PATH、ファイル、Gitブランチ、package scripts |
 
 SSH先、tmux内、他のシェル・ターミナルは初期版の対象範囲外です。
 
-Zedでは `figfig setup zed` による追加のカーソル位置取得用ヘルパーの登録が必要です。Zed／Zed Preview／Zed Nightlyのプロセスを識別します。導入手順は[インストールガイド](../getting-started/installation.md#zedの内蔵ターミナルで使う)を参照してください。
+## 内蔵ターミナルの要件
+
+| ホスト | 位置・フォーカス取得 | 検証状況 |
+| --- | --- | --- |
+| VSCode stable／Insiders、Cursor | Accessibility、必要時は共通InputMethodKitヘルパー | 識別・ネイティブ座標・PTY祖先判定を自動検証。実ポップアップの受け入れ確認は未完了 |
+| Zed stable／Preview／Nightly | InputMethodKit。取得できない場合はアクセシビリティとカーソルの行・列で下部ターミナルの入力付近にポップアップを配置 | 詳細は[検証記録](../verification.md) |
+| IntelliJ IDEA、PyCharm、WebStorm、GoLand、CLion、Rider、RubyMine、DataGrip、RustRover、Android Studio | figfig Terminalプラグイン | 導入済みIntelliJ SDKでのビルドと実Java通信を検証。製品ごとの実機確認は未完了 |
+
+JetBrainsはClassicとReworkedを対象とし、廃止済みExperimental 2024は含めません。識別への対応と、全バージョン・ターミナル方式での実機確認は区別します。[導入手順](../getting-started/installation.md#zedの内蔵ターミナルで使う)も参照してください。
 
 ## 入力の解析
 
@@ -31,13 +39,13 @@ git、brew、npm、pnpm、dockerの主要なサブコマンドとオプション
 
 ## 権限・フォーカス
 
-入力位置はmacOS Accessibilityから取得します。対応するターミナルが最前面にあり、シェルのターミナルPIDと一致する場合にポップアップを表示します。
+Terminal.app／iTerm2はmacOS Accessibilityから入力位置を取得します。VSCode／Cursorはフォーカスされたxterm入力欄を識別してAccessibility座標を優先し、必要時は共通InputMethodKitヘルパーを使います。対応するターミナルが最前面にあり、シェルのターミナルPIDと一致する場合にポップアップを表示します。
 
-ZedではInputMethodKitでカーソル座標を取得します。別の位置やペインへ移動した場合は候補を閉じ、新しいシェル入力を待ちます。位置取得に失敗した場合やヘルパー未登録時も候補を閉じ、`figfig doctor`に診断を表示します。
+ZedはInputMethodKit、JetBrains系は専用プラグインでカーソル座標を取得します。別の位置やペインへ移動した場合は候補を閉じ、新しいシェル入力を待ちます。Zedで位置取得に失敗した場合やヘルパー未登録時は、アクセシビリティのウィンドウ位置と、下部ターミナルが返すカーソルの行・列を使ってポップアップを配置します。`figfig doctor` で配置方法を確認できます。
 
 ## 検証状況
 
-Zed連携の座標変換、古い応答の破棄、ネイティブヘルパーとローカルソケットの通信は自動テストで検証します。入力メソッドを登録したZedでの実際の表示・IME・ペイン切り替えは別途実機確認が必要です。
+内蔵ターミナル連携の座標変換、古い応答の破棄、ネイティブヘルパーの通信、エディタの祖先PID、セットアップ互換コマンド、JetBrainsプラグインの実Java通信は自動テストで検証します。実際の表示・IME・ペイン切り替えは別途実機確認が必要です。
 
 Apple Silicon・macOSで、自動テスト、本番ビルド、署名、実ヘルパーとの通信を確認しています。Terminal.appとiTerm2での基本表示はCLI化前の版で手動確認済みです。
 

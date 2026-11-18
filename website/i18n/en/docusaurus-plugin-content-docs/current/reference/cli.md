@@ -8,6 +8,9 @@ description: figfig commands, arguments, configuration keys, and exit codes.
 | Command | Action |
 | --- | --- |
 | `figfig setup` | Add integration to `.zshrc` and back up an existing file |
+| `figfig setup terminal` | Install and enable the shared integrated-terminal cursor tracker |
+| `figfig setup terminal --remove` | Disable and remove the shared tracker |
+| `figfig setup zed` | Compatibility alias for `setup terminal` (also accepts `--remove`) |
 | `figfig init zsh` | Print the zsh integration script to standard output |
 | `figfig permissions` | Start the helper and check or request macOS permission |
 
@@ -75,4 +78,4 @@ Running figfig without arguments also displays help.
 
 ## Exit codes {#終了コード}
 
-Successful operations return `0`. Invalid arguments, settings errors, and connection failures return `1`. `doctor` also returns `1` when Accessibility permission is missing.
+Successful operations return `0`. Invalid arguments, settings errors, and connection failures return `1`. `doctor` also returns `1` when a required Accessibility permission is missing or cursor positioning is unavailable.

@@ -305,6 +305,7 @@ mod tests {
                 cursor: s.chars().count(),
                 cwd: "/nonexistent-figfig-unit-test".into(),
                 terminal_pid: 0,
+                terminal_size: None,
             },
             20,
         )

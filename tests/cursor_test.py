@@ -1,6 +1,7 @@
 """Native cursor tracker geometry and IPC, without installing an input method."""
 from pathlib import Path
 import os
+import json
 import select
 import subprocess
 import sys
@@ -22,6 +23,8 @@ class CursorIntegration(unittest.TestCase):
         cls.executable = Path(cls.build.name) / "cursor-test"
         subprocess.run([
             "xcrun", "clang", "-fobjc-arc", "-Wall", "-Wextra", "-Wno-unused-parameter",
+            "-DFIGFIG_HOSTS_JSON=" + json.dumps((ROOT / "assets/terminal-hosts.json").read_text()),
+            "-framework", "ApplicationServices",
             "-framework", "AppKit", "-framework", "Carbon", "-framework", "InputMethodKit",
             str(ROOT / "tests/fixtures/cursor_test.m"), "-o", str(cls.executable),
         ], check=True, capture_output=True, text=True)
@@ -47,11 +50,11 @@ class CursorIntegration(unittest.TestCase):
             "requestId": "fixture", "terminalPid": 42, "x": -1500, "y": 800, "height": 20, "focus": 123,
         }}])
 
-    def test_bridge_identifies_the_zed_process_owning_the_terminal(self):
+    def check_bridge_host(self, host, helpers=()):
         cli = ROOT / "target/debug/figfig"
         env = {**os.environ, "FIGFIG_RUNTIME_DIR": str(self.directory)}
         env.pop("FIGFIG_TERMINAL_PID", None)
-        process = subprocess.Popen([str(self.host), str(cli), "bridge", "zed-ancestry"], env=env,
+        process = subprocess.Popen([str(host), *map(str, helpers), str(cli), "bridge", "host-ancestry"], env=env,
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             ready, _, _ = select.select([process.stdout], [], [], 5)
@@ -75,6 +78,28 @@ class CursorIntegration(unittest.TestCase):
                     process.wait(timeout=3)
                 process.stdout.close()
                 process.stderr.close()
+
+    def test_bridge_identifies_editor_hosts_through_pty_helpers(self):
+        binary = self.host.read_bytes()
+        for bundle, executable, wrappers in [
+            ("Zed Preview.app", "zed", []),
+            ("Visual Studio Code.app", "Electron", ["Code Helper", "pty-host"]),
+            ("Cursor.app", "Cursor", ["Cursor Helper", "pty-host"]),
+            ("IntelliJ IDEA.app", "idea", ["pty4j-unix-spawn-helper"]),
+        ]:
+            with self.subTest(bundle=bundle):
+                host = Path(self.build.name) / bundle / "Contents/MacOS" / executable
+                host.parent.mkdir(parents=True, exist_ok=True)
+                host.write_bytes(binary)
+                host.chmod(0o755)
+                helpers = []
+                for wrapper in wrappers:
+                    path = Path(self.build.name) / wrapper
+                    path.write_bytes(binary)
+                    path.chmod(0o755)
+                    helpers.append(path)
+                self.check_bridge_host(host, helpers)
+                self.backend.messages.clear()
 
     def test_insecure_socket_or_runtime_does_not_receive_geometry(self):
         for directory_mode, socket_mode in [(0o755, 0o600), (0o700, 0o666)]:

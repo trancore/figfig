@@ -1,0 +1,170 @@
+[
+  {
+    "name": "Terminal.app",
+    "bundle": "Terminal.app",
+    "executable": "Terminal",
+    "bundleId": "com.apple.Terminal",
+    "backend": "accessibility",
+    "family": ""
+  },
+  {
+    "name": "iTerm2",
+    "bundle": "iTerm.app",
+    "executable": "iTerm2",
+    "bundleId": "com.googlecode.iterm2",
+    "backend": "accessibility",
+    "family": ""
+  },
+  {
+    "name": "iTerm2",
+    "bundle": "iTerm2.app",
+    "executable": "iTerm2",
+    "bundleId": "com.googlecode.iterm2",
+    "backend": "accessibility",
+    "family": ""
+  },
+  {
+    "name": "Zed",
+    "bundle": "Zed.app",
+    "executable": "zed",
+    "bundleId": "dev.zed.Zed",
+    "backend": "inputMethod",
+    "family": "zed"
+  },
+  {
+    "name": "Zed",
+    "bundle": "Zed Preview.app",
+    "executable": "zed",
+    "bundleId": "dev.zed.Zed-Preview",
+    "backend": "inputMethod",
+    "family": "zed"
+  },
+  {
+    "name": "Zed",
+    "bundle": "Zed Nightly.app",
+    "executable": "zed",
+    "bundleId": "dev.zed.Zed-Nightly",
+    "backend": "inputMethod",
+    "family": "zed"
+  },
+  {
+    "name": "VSCode",
+    "bundle": "Visual Studio Code.app",
+    "executable": "Electron",
+    "bundleId": "com.microsoft.VSCode",
+    "backend": "inputMethod",
+    "family": "electron"
+  },
+  {
+    "name": "VSCode Insiders",
+    "bundle": "Visual Studio Code - Insiders.app",
+    "executable": "Electron",
+    "bundleId": "com.microsoft.VSCodeInsiders",
+    "backend": "inputMethod",
+    "family": "electron"
+  },
+  {
+    "name": "Cursor",
+    "bundle": "Cursor.app",
+    "executable": "Cursor",
+    "bundleId": "com.todesktop.230313mzl4w4u92",
+    "backend": "inputMethod",
+    "family": "electron"
+  },
+  {
+    "name": "IntelliJ IDEA",
+    "bundle": "IntelliJ IDEA.app",
+    "executable": "idea",
+    "bundleId": "com.jetbrains.intellij",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "IntelliJ IDEA",
+    "bundle": "IntelliJ IDEA CE.app",
+    "executable": "idea",
+    "bundleId": "com.jetbrains.intellij.ce",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "PyCharm",
+    "bundle": "PyCharm.app",
+    "executable": "pycharm",
+    "bundleId": "com.jetbrains.pycharm",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "PyCharm",
+    "bundle": "PyCharm CE.app",
+    "executable": "pycharm",
+    "bundleId": "com.jetbrains.pycharm.ce",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "WebStorm",
+    "bundle": "WebStorm.app",
+    "executable": "webstorm",
+    "bundleId": "com.jetbrains.WebStorm",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "GoLand",
+    "bundle": "GoLand.app",
+    "executable": "goland",
+    "bundleId": "com.jetbrains.goland",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "CLion",
+    "bundle": "CLion.app",
+    "executable": "clion",
+    "bundleId": "com.jetbrains.CLion",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "Rider",
+    "bundle": "Rider.app",
+    "executable": "rider",
+    "bundleId": "com.jetbrains.rider",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "RubyMine",
+    "bundle": "RubyMine.app",
+    "executable": "rubymine",
+    "bundleId": "com.jetbrains.rubymine",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "DataGrip",
+    "bundle": "DataGrip.app",
+    "executable": "datagrip",
+    "bundleId": "com.jetbrains.datagrip",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "RustRover",
+    "bundle": "RustRover.app",
+    "executable": "rustrover",
+    "bundleId": "com.jetbrains.rustrover",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  },
+  {
+    "name": "Android Studio",
+    "bundle": "Android Studio.app",
+    "executable": "studio",
+    "bundleId": "com.google.android.studio",
+    "backend": "inputMethod",
+    "family": "jetbrains"
+  }
+]

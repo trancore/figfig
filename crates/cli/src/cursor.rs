@@ -29,7 +29,7 @@ pub async fn setup(remove: bool) -> Result<()> {
             )?;
             fs::remove_dir_all(&bundle)?;
         }
-        println!("Removed figfig's optional Zed cursor tracker.");
+        println!("Removed figfig's shared integrated-terminal cursor tracker.");
         return Ok(());
     }
     fs::create_dir_all(executable.parent().unwrap())?;
@@ -60,7 +60,7 @@ pub async fn setup(remove: bool) -> Result<()> {
         bail!("Could not sign the cursor tracker");
     }
     println!("Installed {}", bundle.display());
-    println!("Allow “figfig Cursor Tracking” when macOS asks to enable it. It requests only Zed's cursor geometry and does not handle keystrokes or change your keyboard layout.");
+    println!("Registering figfig Cursor Tracking. A first installation may require logging out of macOS and back in before activation. It requests only supported integrated terminals' cursor geometry and does not handle keystrokes or change your keyboard layout.");
     crate::helper::ensure_running().await?;
     crate::helper::require_ack(
         crate::helper::exchange(figfig_core::ClientMessage::SetupCursor {
@@ -69,11 +69,11 @@ pub async fn setup(remove: bool) -> Result<()> {
         })
         .await?,
     )?;
-    println!("Restart Zed and open a new zsh terminal. Run `figfig setup zed --remove` to uninstall cursor tracking.");
+    println!("Restart your editor and open a new zsh terminal. Run `figfig setup terminal --remove` to uninstall cursor tracking.");
     Ok(())
 }
 
 #[cfg(not(target_os = "macos"))]
 pub async fn setup(_: bool) -> Result<()> {
-    bail!("Zed cursor tracking requires macOS");
+    bail!("Integrated-terminal cursor tracking requires macOS");
 }

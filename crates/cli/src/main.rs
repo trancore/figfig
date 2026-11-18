@@ -13,9 +13,10 @@ use tokio::net::UnixStream;
 const HELP: &str = "figfig — local terminal autocomplete
 
   figfig setup          Install zsh integration (backs up .zshrc)
-  figfig setup zed      Install and enable optional Zed cursor tracking
-  figfig setup zed --remove
-                        Disable and remove Zed cursor tracking
+  figfig setup terminal Install and enable integrated-terminal cursor tracking
+  figfig setup terminal --remove
+                        Disable and remove shared cursor tracking
+  figfig setup zed      Compatibility alias for setup terminal
   figfig init zsh       Print zsh integration
   figfig config         Show configuration
   figfig config get KEY
@@ -54,11 +55,14 @@ async fn run() -> Result<()> {
             print!("{}", include_str!("../../../shell/figfig.zsh"));
         }
         Some("setup") if args.len() == 1 => setup::run()?,
-        Some("setup") if args.get(1).map(String::as_str) == Some("zed") && args.len() == 2 => {
+        Some("setup")
+            if matches!(args.get(1).map(String::as_str), Some("terminal" | "zed"))
+                && args.len() == 2 =>
+        {
             cursor::setup(false).await?
         }
         Some("setup")
-            if args.get(1).map(String::as_str) == Some("zed")
+            if matches!(args.get(1).map(String::as_str), Some("terminal" | "zed"))
                 && args.get(2).map(String::as_str) == Some("--remove")
                 && args.len() == 3 =>
         {
@@ -138,6 +142,7 @@ fn complete(args: &[String]) -> Result<()> {
         cursor: buffer.chars().count(),
         cwd: cwd.to_string_lossy().into(),
         terminal_pid: 0,
+        terminal_size: None,
     };
     let response = Engine::new().complete(&request, 12);
     println!("{}", serde_json::to_string_pretty(&response)?);
@@ -159,15 +164,42 @@ async fn doctor() -> Result<()> {
             accessibility,
             terminal,
             error,
+            zed_window_popup,
         } => {
             println!("Protocol: {version}\nPaused: {paused}\nAccessibility: {accessibility}\nFocused terminal: {}", terminal.as_deref().unwrap_or("none"));
+            let positioning_failed = error.is_some();
             if let Some(error) = error {
                 println!("Position tracking: {error}");
             }
-            if terminal.as_deref() == Some("Zed") {
-                println!("Cursor positioning: InputMethodKit (requires `figfig setup zed`).");
+            if terminal
+                .as_deref()
+                .and_then(figfig_core::terminal::host_for_name)
+                .is_some_and(|host| host.family == "jetbrains")
+            {
+                println!("Cursor positioning: figfig Terminal plugin (JetBrains). See the installation guide to install the plugin.");
+            } else if zed_window_popup {
+                println!("Popup positioning: Zed window (cursor tracking unavailable).");
+            } else if terminal
+                .as_deref()
+                .and_then(figfig_core::terminal::host_for_name)
+                .is_some_and(|host| host.family == "electron")
+            {
+                println!("Cursor positioning: Accessibility; optional InputMethodKit fallback (`figfig setup terminal`).");
+                if !accessibility {
+                    bail!("Run figfig permissions to enable integrated-terminal focus detection.");
+                }
+            } else if terminal
+                .as_deref()
+                .is_some_and(figfig_core::terminal::uses_cursor_tracker)
+            {
+                println!("Cursor positioning: InputMethodKit (requires `figfig setup terminal`).");
             } else if !accessibility {
                 bail!("Run figfig permissions to enable terminal cursor positioning.");
+            }
+            if positioning_failed {
+                bail!(
+                    "Cursor positioning is unavailable; see the Position tracking diagnosis above."
+                );
             }
         }
         ServerMessage::Error { message } => bail!("{message}"),

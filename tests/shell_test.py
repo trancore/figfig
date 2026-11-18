@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import pty
 import select
+import struct
 import subprocess
 import tempfile
 import termios
@@ -18,13 +19,17 @@ from helpers import Backend
 
 
 class Shell:
-    def __init__(self, directory):
+    def __init__(self, directory, *, zed=False):
         self.directory = directory
         self.probe = directory / "probe"
         self.master, slave = pty.openpty()
         env = {**os.environ, "ZDOTDIR": str(directory), "FIGFIG_RUNTIME_DIR": str(directory / "runtime"), "FIGFIG_CONFIG_DIR": str(directory / "config"), "TERM": "xterm-256color", "LC_ALL": "en_US.UTF-8", "TEST_PROBE": str(self.probe)}
         env.pop("SSH_CONNECTION", None)
         env.pop("TMUX", None)
+        env.pop("TERM_PROGRAM", None)
+        if zed:
+            env["TERM_PROGRAM"] = "zed"
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 18, 162, 1458, 342))
         (directory / ".zshrc").write_text(f"""
 PROMPT='FIGFIG_PROMPT> '
 RPROMPT=''
@@ -131,6 +136,44 @@ class ShellIntegration(unittest.TestCase):
         self.shell.wait_state(lambda _, visible: visible == "1")
         self.shell.send(b"\x1b[B\t")
         self.shell.wait_state(lambda text, visible: text == "echo figfig_two " and visible == "0")
+
+    def test_zed_reports_the_cursor_cell_and_preserves_input_during_the_query(self):
+        shell = Shell(self.directory, zed=True)
+        shell.backend = self.backend
+        self.addCleanup(shell.close)
+
+        shell.send("echo fig")
+        shell.wait_output(b"\x1b[5n\x1b[6n")
+        shell.send(b"f\x1b[0n\x1b[3;24R")
+        shell.wait_output(b"\x1b[5n\x1b[6n")
+        shell.send(b"\x1b[0n\x1b[3;25R")
+        shell.wait_state(lambda text, visible: text == "echo figf" and visible == "1")
+
+        request = next(
+            message["request"] for message in reversed(self.backend.messages)
+            if message["type"] == "complete"
+        )
+        self.assertEqual(request["buffer"], "echo figf")
+        self.assertEqual(request["terminalSize"]["cursor"], {
+            "row": 3, "column": 25, "rows": 18, "columns": 162,
+        })
+
+    def test_zed_discards_a_cursor_report_after_the_query_timed_out(self):
+        shell = Shell(self.directory, zed=True)
+        shell.backend = self.backend
+        self.addCleanup(shell.close)
+
+        shell.send("echo fig")
+        shell.wait_output(b"\x1b[5n\x1b[6n")
+        shell.wait_state(lambda text, visible: text == "echo fig" and visible == "1")
+        request = next(
+            message["request"] for message in reversed(self.backend.messages)
+            if message["type"] == "complete"
+        )
+        self.assertNotIn("cursor", request["terminalSize"])
+
+        shell.send(b"\x1b[0n\x1b[3;24R\t")
+        shell.wait_state(lambda text, visible: text == "echo figfig_one " and visible == "0")
 
     def test_bridge_exchanges_a_completion(self):
         env = {**os.environ, "FIGFIG_RUNTIME_DIR": str(self.directory / "runtime"), "FIGFIG_TERMINAL_PID": "0"}

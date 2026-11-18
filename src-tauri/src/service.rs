@@ -1,10 +1,12 @@
 use crate::{
-    cursor::{CursorAction, CursorQuery, SETUP_HINT},
+    cursor::{CursorAction, CursorQuery},
     native,
 };
 use anyhow::Result;
 use figfig_core::{
-    runtime, CompletionRequest, CompletionResponse, Engine, ServerMessage, SessionState, Settings,
+    runtime,
+    terminal::{tracker_hint, CursorBackend},
+    CompletionRequest, CompletionResponse, Engine, ServerMessage, SessionState, Settings,
     PROTOCOL_VERSION,
 };
 use std::{
@@ -31,6 +33,7 @@ struct Inner {
     error: Option<String>,
     cursor_query: Option<CursorQuery>,
     cursor_sequence: u64,
+    terminal_pid: i32,
 }
 
 pub struct Service {
@@ -53,6 +56,7 @@ impl Service {
                 error: None,
                 cursor_query: None,
                 cursor_sequence: 0,
+                terminal_pid: 0,
             }),
             events,
             engine: Arc::new(Engine::new()),
@@ -71,6 +75,8 @@ impl Service {
                 return;
             }
             inner.cursor_query = None;
+            inner.terminal_pid = request.terminal_pid;
+            inner.error = None;
         }
         let service = self.clone();
         let app = app.clone();
@@ -133,24 +139,58 @@ impl Service {
     }
 
     pub fn status(&self) -> ServerMessage {
-        let foreground = native::terminal_name(native::frontmost_pid());
-        let caret = native::caret(0);
-        let inner = self.inner.lock().unwrap();
-        ServerMessage::Status {
-            version: PROTOCOL_VERSION,
-            paused: inner.paused,
-            accessibility: native::trusted(),
-            terminal: foreground.clone().or_else(|| {
+        let pid = native::frontmost_pid();
+        let foreground = native::terminal_host(pid);
+        let caret = native::caret(pid);
+        let (paused, current_error, showing_zed_popup) = {
+            let inner = self.inner.lock().unwrap();
+            let current_error = if inner.terminal_pid == pid {
+                inner.error.clone()
+            } else {
+                None
+            };
+            let showing_zed_popup = inner.caret.is_some_and(|anchor| {
+                anchor.pid == pid
+                    && matches!(anchor.source, native::PositionSource::ZedWindow { .. })
+            });
+            (inner.paused, current_error, showing_zed_popup)
+        };
+
+        let uses_tracker =
+            foreground.is_some_and(|host| host.backend == CursorBackend::InputMethod);
+        let electron_caret =
+            foreground.is_some_and(|host| host.family == "electron") && caret.is_ok();
+        let tracker_error = if uses_tracker && !electron_caret {
+            native::tracker_ready(pid).err()
+        } else {
+            None
+        };
+        let zed_window_popup = foreground.is_some_and(|host| host.family == "zed")
+            && (tracker_error.is_some() || showing_zed_popup)
+            && native::zed_window_anchor(pid, None).is_ok();
+        let terminal = foreground
+            .or_else(|| {
                 caret
                     .as_ref()
                     .ok()
-                    .and_then(|caret| native::terminal_name(caret.pid))
-            }),
-            error: if foreground.as_deref() == Some("Zed") {
-                inner.error.clone()
-            } else {
-                caret.err().or_else(|| inner.error.clone())
-            },
+                    .and_then(|caret| native::terminal_host(caret.pid))
+            })
+            .map(|host| host.name.clone());
+        let error = if zed_window_popup || (uses_tracker && electron_caret) {
+            None
+        } else if uses_tracker {
+            tracker_error.or(current_error)
+        } else {
+            caret.err().or(current_error)
+        };
+
+        ServerMessage::Status {
+            version: PROTOCOL_VERSION,
+            paused,
+            accessibility: native::trusted(),
+            terminal,
+            zed_window_popup,
+            error,
         }
     }
 
@@ -214,7 +254,19 @@ impl Service {
         }
         let enabled =
             inner.settings.popup_enabled && !inner.paused && !response.candidates.is_empty();
-        if enabled && native::terminal_name(request.terminal_pid).as_deref() == Some("Zed") {
+        let host = if enabled {
+            native::terminal_host(request.terminal_pid)
+        } else {
+            None
+        };
+        if host.is_some_and(|host| host.family == "electron") {
+            if let Ok(caret) = native::caret(request.terminal_pid) {
+                drop(inner);
+                self.present_at(app, request, response, Some(Ok(caret)));
+                return;
+            }
+        }
+        if host.is_some_and(|host| host.backend == CursorBackend::InputMethod) {
             if native::frontmost_pid() != request.terminal_pid {
                 drop(inner);
                 self.present_at(
@@ -236,9 +288,7 @@ impl Service {
                 CursorAction::Complete(request.clone(), response),
             );
             drop(inner);
-            if let Err(error) = native::request_zed_caret(&id, request.terminal_pid) {
-                self.cursor_failed(app, error);
-            }
+            self.dispatch_cursor(app, &id, request.terminal_pid);
             return;
         }
         drop(inner);
@@ -257,12 +307,25 @@ impl Service {
         id
     }
 
+    fn dispatch_cursor(&self, app: &tauri::AppHandle, id: &str, terminal_pid: i32) {
+        if let Err(error) = native::request_tracker_caret(id, terminal_pid) {
+            self.cursor_failed(app, error);
+        }
+    }
+
     fn cursor_failed(&self, app: &tauri::AppHandle, error: String) {
         let query = self.inner.lock().unwrap().cursor_query.take();
         if let Some(query) = query {
             match query.action {
                 CursorAction::Complete(request, response) => {
-                    self.present_at(app, &request, response, Some(Err(error)))
+                    let anchor = if native::terminal_host(request.terminal_pid)
+                        .is_some_and(|host| host.family == "zed")
+                    {
+                        native::zed_window_anchor(request.terminal_pid, request.terminal_size)
+                    } else {
+                        Err(error)
+                    };
+                    self.present_at(app, &request, response, Some(anchor))
                 }
                 CursorAction::Track { .. } => {
                     self.inner.lock().unwrap().error = Some(error);
@@ -285,7 +348,7 @@ impl Service {
             inner.cursor_query.take().unwrap()
         };
         let caret = if native::frontmost_pid() == position.terminal_pid {
-            native::zed_caret(&position)
+            native::tracker_caret(&position)
         } else {
             Err("The shell's terminal is not focused".into())
         };
@@ -330,13 +393,9 @@ impl Service {
         }
         let enabled =
             inner.settings.popup_enabled && !inner.paused && !response.candidates.is_empty();
-        let caret = if enabled {
-            supplied_caret.unwrap_or_else(|| native::caret(request.terminal_pid))
-        } else {
-            Err("No active suggestions".into())
-        };
         response.visible = false;
         if enabled {
+            let caret = supplied_caret.unwrap_or_else(|| native::caret(request.terminal_pid));
             match caret {
                 Ok(caret) if request.terminal_pid > 0 => {
                     if let Some(window) = app.get_webview_window("popup") {
@@ -371,39 +430,56 @@ impl Service {
     }
 
     pub fn track(&self, app: &tauri::AppHandle) {
-        {
+        let (pending, caret) = {
             let inner = self.inner.lock().unwrap();
-            if let Some(query) = &inner.cursor_query {
-                let expired = query.expired(Instant::now());
-                drop(inner);
-                if expired {
-                    self.cursor_failed(app, SETUP_HINT.into());
-                }
-                return;
-            }
-        }
-        let old = {
-            let inner = self.inner.lock().unwrap();
-            if !inner.popup.visible {
-                return;
-            }
-            inner.caret
+            let pending = inner
+                .cursor_query
+                .as_ref()
+                .map(|query| (query.terminal_pid, query.expired(Instant::now())));
+            let caret = inner.caret.filter(|_| inner.popup.visible);
+            (pending, caret)
         };
-        let Some(old) = old else {
+        if let Some((pid, expired)) = pending {
+            if expired {
+                let host = native::terminal_host(pid);
+                let name = host.map_or("", |host| host.name.as_str());
+                self.cursor_failed(app, tracker_hint(name).into());
+            }
+            return;
+        }
+        let Some(old) = caret else {
             return;
         };
-        if native::terminal_name(old.pid).as_deref() == Some("Zed") {
-            if native::frontmost_pid() != old.pid {
-                self.hide(app);
-                return;
+
+        match old.source {
+            native::PositionSource::ZedWindow { terminal_size, .. } => {
+                if native::zed_window_anchor(old.pid, terminal_size).ok() != Some(old) {
+                    self.dismiss_for_focus_change(app);
+                }
             }
+            native::PositionSource::Tracker => self.track_with_tracker(app, old),
+            native::PositionSource::Accessibility => self.track_accessibility(app, old),
+        }
+    }
+
+    fn dismiss_for_focus_change(&self, app: &tauri::AppHandle) {
+        self.inner.lock().unwrap().session.dismissed = true;
+        self.hide(app);
+    }
+
+    fn track_with_tracker(&self, app: &tauri::AppHandle, old: native::Caret) {
+        if native::frontmost_pid() != old.pid {
+            self.hide(app);
+            return;
+        }
+        let id = {
             let mut inner = self.inner.lock().unwrap();
             let session_id = inner.popup.session_id.clone();
             let revision = inner.popup.revision;
             if !inner.session.matches(&session_id, revision) {
                 return;
             }
-            let id = Self::queue_cursor(
+            Self::queue_cursor(
                 &mut inner,
                 old.pid,
                 CursorAction::Track {
@@ -411,30 +487,26 @@ impl Service {
                     session_id,
                     revision,
                 },
-            );
-            drop(inner);
-            if let Err(error) = native::request_zed_caret(&id, old.pid) {
-                self.cursor_failed(app, error);
-            }
+            )
+        };
+        self.dispatch_cursor(app, &id, old.pid);
+    }
+
+    fn track_accessibility(&self, app: &tauri::AppHandle, old: native::Caret) {
+        let Ok(current) = native::caret(old.pid) else {
+            self.dismiss_for_focus_change(app);
             return;
-        }
-        match native::caret(old.pid) {
-            Ok(current) if current.focus == old.focus => {
-                if current != old {
-                    let count = self.inner.lock().unwrap().popup.candidates.len();
-                    if let Some(window) = app.get_webview_window("popup") {
-                        if native::place(&window, current, POPUP_WIDTH, popup_height(count)).is_ok()
-                        {
-                            self.inner.lock().unwrap().caret = Some(current);
-                        } else {
-                            self.hide(app);
-                        }
-                    }
+        };
+        if current.focus != old.focus {
+            self.dismiss_for_focus_change(app);
+        } else if current != old {
+            let count = self.inner.lock().unwrap().popup.candidates.len();
+            if let Some(window) = app.get_webview_window("popup") {
+                if native::place(&window, current, POPUP_WIDTH, popup_height(count)).is_ok() {
+                    self.inner.lock().unwrap().caret = Some(current);
+                } else {
+                    self.hide(app);
                 }
-            }
-            _ => {
-                self.inner.lock().unwrap().session.dismissed = true;
-                self.hide(app);
             }
         }
     }

@@ -47,7 +47,7 @@ pub fn run() -> Result<()> {
         writeln!(output, "\n# >>> figfig >>>\n{line}\n# <<< figfig <<<")?;
         println!("Installed zsh integration in {}", file.display());
     }
-    println!("Open a new zsh session. The popup helper starts automatically.\nFor Terminal.app/iTerm2, run `figfig permissions` to allow cursor positioning.\nFor Zed, also run `figfig setup zed` to enable the optional cursor tracker.\nUse `figfig config` to inspect preferences.");
+    println!("Open a new zsh session. The popup helper starts automatically.\nFor Terminal.app/iTerm2, run `figfig permissions` to allow cursor positioning.\nFor integrated terminals (VSCode, Cursor, Zed, and JetBrains IDEs), also run `figfig setup terminal` to enable the optional cursor tracker.\nUse `figfig config` to inspect preferences.");
     Ok(())
 }
 

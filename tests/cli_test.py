@@ -60,6 +60,22 @@ class CliIntegration(unittest.TestCase):
         self.assertEqual(rc.read_text(), content)
         self.assertFalse((self.runtime / "app.sock").exists())
 
+    @unittest.skipUnless(sys.platform == "darwin", "macOS cursor bundle")
+    def test_shared_tracker_setup_aliases_and_removal_use_one_bundle(self):
+        bundle = self.directory / "Library/Input Methods/figfig Cursor.app"
+        self.call("setup", "terminal")
+        self.assertTrue((bundle / "Contents/MacOS/figfig-cursor").is_file())
+        before = (bundle / "Contents/Info.plist").read_bytes()
+        self.call("setup", "zed")
+        self.assertEqual((bundle / "Contents/Info.plist").read_bytes(), before)
+        self.assertIn("dev.figfig.cursor", before.decode())
+        self.call("setup", "terminal", "unexpected", ok=False)
+        self.assertTrue(bundle.is_dir())
+        self.call("setup", "zed", "--remove")
+        self.assertFalse(bundle.exists())
+        self.call("setup", "terminal", "--remove")
+        self.assertFalse(bundle.exists())
+
     def test_settings_can_be_changed_without_starting_a_helper(self):
         self.call("config", "set", "popup", "false")
         self.call("config", "set", "max-candidates", "6")
@@ -68,6 +84,20 @@ class CliIntegration(unittest.TestCase):
         self.assertEqual(settings, {"popupEnabled": False, "historyEnabled": True, "maxCandidates": 6})
         self.assertEqual(self.call("settings").stdout, self.call("config").stdout)
         self.assertFalse((self.runtime / "app.sock").exists())
+
+    def test_doctor_explains_electron_positioning_and_missing_permissions(self):
+        self.env.update(FIGFIG_FIXTURE_TERMINAL="VSCode", FIGFIG_FIXTURE_ACCESSIBILITY="0")
+        self.call("start")
+        result = self.call("doctor", ok=False)
+        self.assertIn("Focused terminal: VSCode", result.stdout)
+        self.assertIn("Accessibility; optional InputMethodKit fallback", result.stdout)
+        self.assertIn("figfig permissions", result.stderr)
+
+    def test_doctor_explains_jetbrains_plugin_without_requiring_accessibility(self):
+        self.env.update(FIGFIG_FIXTURE_TERMINAL="IntelliJ IDEA", FIGFIG_FIXTURE_ACCESSIBILITY="0")
+        self.call("start")
+        result = self.call("doctor")
+        self.assertIn("figfig Terminal plugin (JetBrains)", result.stdout)
 
     def test_invalid_settings_do_not_overwrite_saved_values(self):
         self.call("config", "set", "history", "false")

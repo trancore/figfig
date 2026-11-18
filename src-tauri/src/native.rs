@@ -218,6 +218,20 @@ mod mac {
     pub fn tracker_ready(pid: i32) -> Result<(), String> {
         let terminal = terminal_name(pid).ok_or("Focus a supported integrated terminal")?;
         let host = figfig_core::terminal::host_for_name(&terminal).unwrap();
+        if host.family == "jetbrains" {
+            use std::os::unix::fs::{FileTypeExt, MetadataExt};
+            let runtime = figfig_core::runtime::runtime_dir().map_err(|e| e.to_string())?;
+            let endpoint = runtime.join(format!("jb-{pid}.sock"));
+            let metadata = std::fs::symlink_metadata(endpoint)
+                .map_err(|_| figfig_core::terminal::tracker_hint(&terminal))?;
+            if !metadata.file_type().is_socket()
+                || metadata.mode() & 0o077 != 0
+                || metadata.uid() != std::fs::metadata(runtime).map_err(|e| e.to_string())?.uid()
+            {
+                return Err("Insecure JetBrains cursor adapter socket".into());
+            }
+            return Ok(());
+        }
         if host.family == "electron" && !trusted() {
             return Err(
                 "Run `figfig permissions` to enable integrated-terminal focus detection.".into(),
@@ -242,6 +256,32 @@ mod mac {
     pub fn request_tracker_caret(request_id: &str, terminal_pid: i32) -> Result<(), String> {
         tracker_ready(terminal_pid)?;
         let path = figfig_core::runtime::socket_path().map_err(|e| e.to_string())?;
+        if terminal_name(terminal_pid)
+            .as_deref()
+            .and_then(figfig_core::terminal::host_for_name)
+            .is_some_and(|host| host.family == "jetbrains")
+        {
+            use tokio::io::AsyncWriteExt;
+            let endpoint = path
+                .parent()
+                .unwrap()
+                .join(format!("jb-{terminal_pid}.sock"));
+            let mut message = serde_json::to_vec(&serde_json::json!({
+                "requestId": request_id, "terminalPid": terminal_pid,
+            }))
+            .map_err(|e| e.to_string())?;
+            message.push(b'\n');
+            // Never block the AppKit thread on an IDE's socket/backlog. Failure
+            // leaves the query unanswered and produces the usual 500ms hint.
+            tauri::async_runtime::spawn(async move {
+                let _ = tokio::time::timeout(std::time::Duration::from_millis(50), async {
+                    let mut stream = tokio::net::UnixStream::connect(endpoint).await?;
+                    stream.write_all(&message).await
+                })
+                .await;
+            });
+            return Ok(());
+        }
         let name = CFString::new("dev.figfig.cursor.request");
         let keys = [
             CFString::new("socketPath"),

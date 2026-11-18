@@ -77,3 +77,7 @@ python3 scripts/smoke-cli.py
 | `website/i18n/en/docusaurus-plugin-content-docs/current` | 公開ドキュメントの英語Markdown原稿 |
 
 配布の流れは[リリース手順](../releasing.md)、サイトの開発・公開は[ドキュメントサイトの運用](documentation.md)を参照してください。
+
+## JetBrainsプラグイン
+
+`python3 scripts/build-jetbrains-plugin.py --ide '/Applications/IntelliJ IDEA.app'` で `target/editors/figfig-terminal.zip` を生成します。導入済みIDEに付属するJDKとプラットフォームライブラリを使います。`test:shell`はSDKがある場合に実JavaアダプターのIPCテストも実行します。別のIDEを使う場合は `FIGFIG_JETBRAINS_IDE` にアプリのパスを設定してください。SDKがないランナーではこのテストを明示的にスキップします。

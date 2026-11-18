@@ -1,0 +1,14 @@
+<idea-plugin>
+  <id>dev.figfig.terminal</id>
+  <name>figfig Terminal</name>
+  <version>0.1.0</version>
+  <vendor url="https://github.com/trancore/figfig">figfig</vendor>
+  <description>Shares only the focused local terminal's cursor geometry with figfig on macOS. Install figfig separately for zsh completions.</description>
+  <idea-version since-build="243"/>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.plugins.terminal</depends>
+  <extensions defaultExtensionNs="com.intellij">
+    <applicationService serviceImplementation="dev.figfig.terminal.CursorTracker"/>
+    <postStartupActivity implementation="dev.figfig.terminal.Startup"/>
+  </extensions>
+</idea-plugin>

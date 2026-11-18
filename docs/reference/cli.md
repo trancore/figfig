@@ -8,6 +8,9 @@ description: figfig CLIのコマンド、引数、設定キー、終了コード
 | コマンド | 動作 |
 | --- | --- |
 | `figfig setup` | `.zshrc`へ連携を追加。既存ファイルのバックアップを作成 |
+| `figfig setup terminal` | 内蔵ターミナル用の共通カーソル取得ヘルパーを導入・有効化 |
+| `figfig setup terminal --remove` | 共通ヘルパーを無効化・削除 |
+| `figfig setup zed` | `setup terminal`の互換コマンド（`--remove`も利用可能） |
 | `figfig init zsh` | zsh連携スクリプトを標準出力へ出力 |
 | `figfig permissions` | ヘルパーを起動し、macOSの権限を確認・要求 |
 
@@ -75,4 +78,4 @@ figfig -V
 
 ## 終了コード
 
-通常終了は`0`、引数の不備・設定エラー・接続失敗などは`1`です。`doctor`はアクセシビリティ権限が不足している場合も`1`を返します。
+通常終了は`0`、引数の不備・設定エラー・接続失敗などは`1`です。`doctor`は必要なアクセシビリティ権限が不足している場合や、カーソル位置取得に異常がある場合も`1`を返します。

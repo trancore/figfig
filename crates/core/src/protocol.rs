@@ -14,6 +14,26 @@ pub struct CompletionRequest {
     pub cwd: String,
     #[serde(default)]
     pub terminal_pid: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub terminal_size: Option<TerminalSize>,
+}
+
+/// Dimensions of the shell's text grid, excluding tabs, docks, and window chrome.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TerminalSize {
+    pub width: u16,
+    pub height: u16,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<TerminalCell>,
+}
+
+/// A one-based cursor position in the terminal's visible grid.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TerminalCell {
+    pub row: u16,
+    pub column: u16,
+    pub rows: u16,
+    pub columns: u16,
 }
 
 /// Geometry only, reported by the optional macOS cursor input method.
@@ -23,10 +43,21 @@ pub struct CursorPosition {
     pub request_id: String,
     pub terminal_pid: i32,
     pub x: f64,
-    /// AppKit screen coordinates, with a bottom-left origin.
+    /// Screen points; AppKit uses a bottom-left origin, Accessibility a top-left origin.
     pub y: f64,
     pub height: f64,
     pub focus: u64,
+    /// Existing InputMethodKit reports use AppKit; IDE adapters can use AX points.
+    #[serde(default)]
+    pub coordinate_system: CoordinateSystem,
+}
+
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum CoordinateSystem {
+    #[default]
+    AppKit,
+    Accessibility,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -99,6 +130,8 @@ pub enum ServerMessage {
         accessibility: bool,
         terminal: Option<String>,
         error: Option<String>,
+        #[serde(default)]
+        zed_window_popup: bool,
     },
     Ack,
     Accessibility {
@@ -177,6 +210,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn legacy_cursor_frames_default_to_appkit_coordinates() {
+        let position: CursorPosition = serde_json::from_str(
+            r#"{
+            "requestId":"old-helper", "terminalPid":42, "x":100,
+            "y":200, "height":20, "focus":1
+        }"#,
+        )
+        .unwrap();
+        assert_eq!(position.coordinate_system, CoordinateSystem::AppKit);
+    }
+
+    #[test]
     fn late_results_cannot_reopen_dismissed_popup() {
         let mut state = SessionState::default();
         let request = CompletionRequest {
@@ -186,6 +231,7 @@ mod tests {
             cursor: 3,
             cwd: "/".into(),
             terminal_pid: 0,
+            terminal_size: None,
         };
         assert!(state.begin(&request));
         assert!(!state.begin(&request));

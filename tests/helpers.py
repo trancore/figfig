@@ -23,6 +23,10 @@ class Backend:
         self.messages = []
         self.paused = False
         self.settings = {"popupEnabled": True, "historyEnabled": True, "maxCandidates": 8}
+        self.terminal = os.environ.get("FIGFIG_FIXTURE_TERMINAL", "Fixture")
+        self.accessibility = os.environ.get("FIGFIG_FIXTURE_ACCESSIBILITY", "1") == "1"
+        self.position_error = os.environ.get("FIGFIG_FIXTURE_POSITION_ERROR")
+        self.zed_window_popup = os.environ.get("FIGFIG_FIXTURE_ZED_WINDOW_POPUP") == "1"
         self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
 
@@ -48,8 +52,10 @@ class Backend:
                     msg = json.loads(line)
                     self.messages.append(msg)
                     kind = msg["type"]
-                    if kind == "status":
-                        self.send(conn, {"type": "status", "version": 1, "paused": self.paused, "accessibility": True, "terminal": "Fixture", "error": None})
+                    if kind == "setupCursor":
+                        self.send(conn, {"type": "ack"})
+                    elif kind == "status":
+                        self.send(conn, {"type": "status", "version": 1, "paused": self.paused, "accessibility": self.accessibility, "terminal": self.terminal, "error": self.position_error, "zed_window_popup": self.zed_window_popup})
                     elif kind == "setPaused":
                         self.paused = msg["paused"]
                         self.send(conn, {"type": "ack"})

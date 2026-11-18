@@ -2,6 +2,7 @@
 #import <AppKit/AppKit.h>
 #import <Carbon/Carbon.h>
 #import <InputMethodKit/InputMethodKit.h>
+#import <ApplicationServices/ApplicationServices.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -10,21 +11,55 @@
 static NSString *const BundleID = @"dev.figfig.cursor";
 static NSString *const RequestName = @"dev.figfig.cursor.request";
 
-static BOOL IsZed(NSString *identifier) {
-    return [@[@"dev.zed.Zed", @"dev.zed.Zed-Preview", @"dev.zed.Zed-Nightly"] containsObject:identifier];
+static NSDictionary *HostProfile(NSString *identifier) {
+    static NSArray *hosts;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        NSData *data = [[NSString stringWithUTF8String:FIGFIG_HOSTS_JSON] dataUsingEncoding:NSUTF8StringEncoding];
+        hosts = [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
+    });
+    for (NSDictionary *host in hosts) {
+        if ([host[@"backend"] isEqualToString:@"inputMethod"] &&
+            [host[@"bundleId"] isEqualToString:identifier]) return host;
+    }
+    return nil;
 }
 
-static NSRect CursorRect(id<IMKTextInput> client) {
+static NSRect CursorRect(id<IMKTextInput> client, NSDictionary *profile) {
     NSRect rect = NSZeroRect;
     NSRange selected = [client selectedRange];
     NSRange marked = [client markedRange];
     // Only ask for geometry of an unselected terminal insertion point.
-    if (selected.location == 0 && selected.length == 0 && marked.length == 0) {
-        [client attributesForCharacterIndex:0 lineHeightRectangle:&rect];
+    BOOL isZed = [profile[@"family"] isEqualToString:@"zed"];
+    if (selected.location != NSNotFound && (!isZed || selected.location == 0) &&
+        selected.length == 0 && marked.length == 0) {
+        [client attributesForCharacterIndex:selected.location lineHeightRectangle:&rect];
     }
     if (!isfinite(rect.origin.x) || !isfinite(rect.origin.y) ||
         !isfinite(rect.size.height) || rect.size.height < 1 || rect.size.height > 200) return NSZeroRect;
     return rect;
+}
+
+// Chromium exposes xterm's input class through AX. Do not accept an editor or
+// search field just because it belongs to the same application/input client.
+static BOOL IsTerminalClasses(NSArray *classes) {
+    return [classes isKindOfClass:NSArray.class] && [classes containsObject:@"xterm-helper-textarea"];
+}
+
+static uint64_t TerminalFocus(pid_t pid, NSDictionary *profile) {
+    if (![profile[@"family"] isEqualToString:@"electron"]) return 0;
+    AXUIElementRef application = AXUIElementCreateApplication(pid);
+    AXUIElementSetMessagingTimeout(application, 0.05);
+    CFTypeRef element = NULL;
+    AXError result = AXUIElementCopyAttributeValue(application, kAXFocusedUIElementAttribute, &element);
+    CFRelease(application);
+    if (result != kAXErrorSuccess || !element) return 0;
+    CFTypeRef classes = NULL;
+    AXUIElementCopyAttributeValue((AXUIElementRef)element, CFSTR("AXDOMClassList"), &classes);
+    uint64_t focus = IsTerminalClasses((__bridge NSArray *)classes) ? (uint64_t)CFHash(element) : 0;
+    if (classes) CFRelease(classes);
+    CFRelease(element);
+    return focus;
 }
 
 static void SendPosition(NSString *path, NSDictionary *position) {
@@ -99,11 +134,20 @@ static void SendPosition(NSString *path, NSDictionary *position) {
         ![pidString isKindOfClass:NSString.class] || requestID.length > 256) return;
     NSRunningApplication *front = NSWorkspace.sharedWorkspace.frontmostApplication;
     id<IMKTextInput> client = (id<IMKTextInput>)[self client];
-    if (!IsZed([client bundleIdentifier]) || !IsZed(front.bundleIdentifier) ||
+    NSDictionary *profile = HostProfile(front.bundleIdentifier);
+    NSDictionary *clientProfile = HostProfile([client bundleIdentifier]);
+    if (!profile || !clientProfile || ![profile[@"bundleId"] isEqual:clientProfile[@"bundleId"]] ||
         front.processIdentifier != pidString.intValue) return;
-    NSRect rect = CursorRect(client);
+    // JetBrains supplies precise geometry and terminal focus from its adapter.
+    if ([profile[@"family"] isEqualToString:@"jetbrains"]) return;
+    uint64_t focus = self.focusID;
+    if ([profile[@"family"] isEqualToString:@"electron"]) {
+        focus = TerminalFocus(front.processIdentifier, profile);
+        if (focus == 0) return;
+    }
+    NSRect rect = CursorRect(client, profile);
     NSDictionary *position = @{ @"requestId": requestID, @"terminalPid": @(front.processIdentifier),
-        @"x": @(rect.origin.x), @"y": @(rect.origin.y), @"height": @(rect.size.height), @"focus": @(self.focusID) };
+        @"x": @(rect.origin.x), @"y": @(rect.origin.y), @"height": @(rect.size.height), @"focus": @(focus) };
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{ SendPosition(path, position); });
 }
 @end

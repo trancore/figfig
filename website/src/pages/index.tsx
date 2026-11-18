@@ -16,7 +16,7 @@ export default function Home(): ReactNode {
       <main className={styles.home}>
         <section className={styles.hero} aria-labelledby="hero-title">
           <div>
-            <p className={styles.compatibility}>macOS · zsh · Terminal.app / iTerm2</p>
+            <p className={styles.compatibility}>macOS · zsh · Terminal.app / iTerm2 / VSCode / Cursor / Zed / JetBrains</p>
             <h1 id="hero-title">
               <Translate id="homepage.heading.first">ターミナルに、</Translate><br />
               <Translate id="homepage.heading.second">補完と履歴予測を。</Translate>

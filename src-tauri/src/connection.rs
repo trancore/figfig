@@ -164,7 +164,15 @@ async fn handle_message(
             service.hide_session(app, &session_id, revision);
             return Ok(ControlFlow::Continue(()));
         }
-        ClientMessage::Status => service.status(),
+        ClientMessage::Status => {
+            // Status can inspect AppKit/TIS state, just like cursor setup.
+            let (sender, receiver) = tokio::sync::oneshot::channel();
+            let service = service.clone();
+            app.run_on_main_thread(move || {
+                let _ = sender.send(service.status());
+            })?;
+            receiver.await?
+        }
         ClientMessage::ReloadSettings => service.reload_settings(app),
         ClientMessage::SetPaused { paused } => {
             service.set_paused(app, paused);

@@ -1,0 +1,71 @@
+name: Update Homebrew tap
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: update-homebrew-tap
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  update:
+    if: github.repository == 'trancore/figfig' && !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download and verify the latest release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+            echo '::error::The latest release does not have a figfig version tag.'
+            exit 1
+          fi
+
+          archive="figfig-${tag#v}-source.tar.gz"
+          base_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$tag"
+          mkdir -p "$RUNNER_TEMP/figfig-release"
+          cd "$RUNNER_TEMP/figfig-release"
+          for asset in "$archive" SHA256SUMS figfig.rb; do
+            curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+              --output "$asset" "$base_url/$asset"
+          done
+
+          checksum=$(sha256sum "$archive")
+          if ! grep -Fxq "$checksum" SHA256SUMS; then
+            echo "::error::SHA256SUMS does not match $archive."
+            exit 1
+          fi
+          if ! grep -Fxq "  url \"$base_url/$archive\"" figfig.rb ||
+             ! grep -Fxq "  sha256 \"${checksum%% *}\"" figfig.rb; then
+            echo '::error::The formula URL or SHA-256 does not match the verified release archive.'
+            exit 1
+          fi
+          ruby -c figfig.rb
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          repository: trancore/homebrew-tap
+          ref: main
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      - name: Publish the formula
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          mkdir -p Formula
+          cp "$RUNNER_TEMP/figfig-release/figfig.rb" Formula/figfig.rb
+          git add -- Formula/figfig.rb
+          if git diff --cached --quiet; then
+            echo "Formula for $TAG is already up to date."
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m "chore: publish figfig ${TAG#v} formula"
+          git push origin HEAD:main

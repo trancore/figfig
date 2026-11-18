@@ -147,6 +147,12 @@ _figfig_history() {
 
 _figfig_redraw() {
   _figfig_history
+  if [[ -z $BUFFER ]]; then
+    [[ -n $_figfig_last_buffer ]] || return 0
+    _figfig_last_buffer='' _figfig_last_cursor=$CURSOR _figfig_suppressed=''
+    _figfig_hide
+    return 0
+  fi
   if [[ $BUFFER != $_figfig_last_buffer || $CURSOR != $_figfig_last_cursor ]]; then
     _figfig_visible=0
     # Let ZLE finish processing a burst of keys before asking for geometry.
@@ -156,7 +162,7 @@ _figfig_redraw() {
     if [[ $BUFFER != $_figfig_suppressed ]]; then
       _figfig_suppressed=''
       (( ++_figfig_revision ))
-      if [[ -n $BUFFER && $KEYMAP != vicmd ]]; then
+      if [[ $KEYMAP != vicmd ]]; then
         _figfig_zed_query_cursor
         _figfig_send complete
       else

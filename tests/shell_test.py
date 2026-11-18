@@ -137,6 +137,30 @@ class ShellIntegration(unittest.TestCase):
         self.shell.send(b"\x1b[B\t")
         self.shell.wait_state(lambda text, visible: text == "echo figfig_two " and visible == "0")
 
+    def test_clearing_input_hides_popup_until_typing_resumes(self):
+        command = "echo fig"
+        self.shell.send(command)
+        self.shell.wait_state(lambda text, visible: (text, visible) == (command, "1"))
+        self.assertFalse(any(message["type"] == "hide" for message in self.backend.messages))
+
+        for method, keys in (("Backspace", b"\x7f" * len(command)), ("Ctrl-U", b"\x15")):
+            with self.subTest(method=method):
+                request = self.backend.messages[-1]["request"]
+                start = len(self.backend.messages)
+                self.shell.send(keys)
+                self.shell.wait_state(lambda text, visible: (text, visible) == ("", "0"))
+                self.assertEqual(self.shell.state(), ("", "0"))
+
+                # Receiving the next completion also waits for earlier messages on this socket.
+                self.shell.send(command)
+                self.shell.wait_state(lambda text, visible: (text, visible) == (command, "1"))
+                messages = self.backend.messages[start:]
+                hides = [message for message in messages if message["type"] == "hide"]
+                self.assertEqual(len(hides), 1, messages)
+                self.assertEqual(hides[0]["session_id"], request["sessionId"])
+                self.assertLess(request["revision"], hides[0]["revision"])
+                self.assertLess(hides[0]["revision"], messages[-1]["request"]["revision"])
+
     def test_zed_reports_the_cursor_cell_and_preserves_input_during_the_query(self):
         shell = Shell(self.directory, zed=True)
         shell.backend = self.backend

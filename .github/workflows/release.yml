@@ -72,4 +72,4 @@ jobs:
           gh release create "$RELEASE_TAG" --verify-tag --draft \
             --title "figfig $RELEASE_TAG" --notes-file release/release-notes.md \
             release/figfig-*-source.tar.gz release/SHA256SUMS release/Formula/figfig.rb
-          echo "Draft prepared. Publish it, verify the public source URL, then update trancore/homebrew-tap manually." >> "$GITHUB_STEP_SUMMARY"
+          echo "Draft prepared. Publishing it as the latest release triggers the Homebrew tap update." >> "$GITHUB_STEP_SUMMARY"

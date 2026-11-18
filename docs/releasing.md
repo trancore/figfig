@@ -1,16 +1,16 @@
 # ソースビルド版のリリース
 
-本体は `trancore/figfig`、tapリポジトリは `trancore/homebrew-tap`、Homebrewで指定するtap名は `trancore/tap` です。タグからソースtar.gz、SHA-256、Formulaを生成し、GitHubのDraft Releaseへ添付します。公開内容を確認してReleaseを公開した後、Formulaをtapへ手動反映します。tapへの自動pushや自動PR作成は行いません。
+本体は `trancore/figfig`、tapリポジトリは `trancore/homebrew-tap`、Homebrewで指定するtap名は `trancore/tap` です。タグからソースtar.gz、SHA-256、Formulaを生成し、GitHubのDraft Releaseへ添付します。Releaseを公開すると、`Update Homebrew tap` が公開成果物を検証し、tapの `main` にFormulaを反映します。
 
 ## 公開までの流れ
 
 初回公開は準備中です。ローカルでの検証結果は[検証記録](verification.md#2026-11-18のhomebrew公開準備の確認結果)を参照してください。
 
-1. tapリポジトリを公開する。
+1. tapリポジトリを公開し、本体にtap更新用のActionsシークレットを設定する。
 2. 本体の配布対象コミットへタグを付け、Draft Releaseを生成する。
 3. Draftのソースを検証専用tapからインストールして確認する。
-4. Releaseを公開し、公開URLからソースのSHA-256を確認する。
-5. Releaseに添付されたFormulaをtapへ反映し、両CPUのCIと正式な導入コマンドを確認する。
+4. ReleaseをLatestとして公開し、`Update Homebrew tap` の成功を確認する。
+5. tapの両CPUのCIと正式な導入コマンドを確認する。
 
 以下のコマンドは、特記がない限り **figfig本体のルートディレクトリ** から実行します。`homebrew-tap` は隣接ディレクトリに配置し、`v0.1.0` は公開するバージョンに合わせて読み替えてください。
 
@@ -31,6 +31,12 @@
 
 括弧内の処理が終わると、実行場所は本体のルートのままです。初回は作業ブランチのHEADを公開先の `main` へ送ります。既にGitHubリポジトリを作成済みの場合は、`gh repo create` を省略します。Formula追加前のtap CIは、未公開であることを通知してインストール検証を省略します。
 
+### tap更新用の認証
+
+`trancore/homebrew-tap` の `main` にpushできるアカウントで、対象リポジトリを `trancore/homebrew-tap` に限定し、リポジトリ権限の `Contents` を `Read and write` にしたfine-grained personal access tokenを作成します。[GitHubのトークン作成手順](https://docs.github.com/ja/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+
+`trancore/figfig` の **Settings → Secrets and variables → Actions** で、リポジトリシークレット `HOMEBREW_TAP_TOKEN` として登録します。トークンの更新時も同じ名前で登録します。[GitHubのシークレット設定手順](https://docs.github.com/ja/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
+
 ## タグからDraft Releaseを作成する
 
 1. `package.json`、ワークスペースの `Cargo.toml`、`src-tauri/tauri.conf.json` のバージョンを揃え、`Cargo.lock` も更新します。初回は `0.1.0` です。
@@ -48,7 +54,7 @@ git push origin v0.1.0
 | --- | --- |
 | `figfig-0.1.0-source.tar.gz` | タグのコミットから生成したソース。ビルド済みバイナリは含まない |
 | `SHA256SUMS` | ソースアーカイブのSHA-256 |
-| `figfig.rb` | 公開ReleaseのURLとSHA-256を指定したFormula。tapでは `Formula/figfig.rb` に配置 |
+| `figfig.rb` | 公開ReleaseのURLとSHA-256を指定したFormula。公開後にtapの `Formula/figfig.rb` へ自動反映 |
 | `release-notes.md` | 元のコミットと導入手順。Actions成果物に保存し、Draftの本文に使用 |
 
 既存タグを指定して手動実行することもできます。
@@ -108,36 +114,22 @@ brew untap trancore/figfig-validation
 
 ## Release公開とtap更新
 
-1. Draft Releaseのソースと確認結果をレビューし、GitHubで公開します。
-2. 公開URLからソースを取得し直し、チェックサムを検証します。Draftの間はこの公開URLは使えません。
-
-```sh
-curl --fail --location \
-  https://github.com/trancore/figfig/releases/download/v0.1.0/figfig-0.1.0-source.tar.gz \
-  --output "$release_dir/figfig-0.1.0-source.tar.gz"
-(cd "$release_dir" && shasum -a 256 -c SHA256SUMS)
-mkdir -p ../homebrew-tap/Formula
-cp "$release_dir/figfig.rb" ../homebrew-tap/Formula/figfig.rb
-```
-
-3. Formulaを対象にコミットし、pushします。
-
-```sh
-git -C ../homebrew-tap switch main
-git -C ../homebrew-tap diff -- Formula/figfig.rb
-git -C ../homebrew-tap add Formula/figfig.rb
-git -C ../homebrew-tap commit -m "chore: publish figfig 0.1.0 formula"
-git -C ../homebrew-tap push origin main
-```
-
-4. tapのCIでApple Silicon・Intelの構文・スタイル・メタデータ・ソースビルド・テスト・削除が成功したことを確認します。
-5. 検証用Macで正式な導入コマンドと、次のバージョンでの `brew upgrade`、`brew uninstall` を確認します。未確認の項目は[検証記録](verification.md)へ残します。
+1. Draft Releaseのソースと確認結果をレビューし、GitHubでLatestとして公開します。
+2. 本体の `Update Homebrew tap` が公開URLからソースと添付ファイルを取得します。ソースの実測SHA-256を `SHA256SUMS` と照合し、Formulaに記載されたURLとSHA-256、Rubyの構文を確認してから、tapの `main` にpushします。
+3. tapのCIでApple Silicon・Intelの構文・スタイル・メタデータ・ソースビルド・テスト・削除が成功したことを確認します。
+4. 検証用Macで正式な導入コマンドと、次のバージョンでの `brew upgrade`、`brew uninstall` を確認します。未確認の項目は[検証記録](verification.md)へ残します。
 
 ```sh
 brew install trancore/tap/figfig
 brew test trancore/tap/figfig
 figfig setup
 figfig permissions
+```
+
+失敗からの復旧や、すでに公開したReleaseの反映には `Update Homebrew tap` を本体のデフォルトブランチから手動実行できます。自動・手動実行ともにその時点でGitHubがLatestとして返す安定版が対象です。Formulaが同一なら新しいコミットは作りません。
+
+```sh
+gh workflow run update-homebrew-tap.yml --repo trancore/figfig
 ```
 
 初回の正式導入が確認できたら、tapのREADME、本体README、日英のインストールページ、サイトトップの日英文言の「公開準備中」を削除し、日英の対応環境・検証記録を実際の結果で更新します。

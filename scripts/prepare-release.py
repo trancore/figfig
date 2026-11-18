@@ -51,9 +51,8 @@ def prepare(repository, tag, output):
     ], check=True)
     (output / "release-notes.md").write_text(
         f"Source build of figfig {version} from `{commit}`.\n\n"
-        "The Homebrew formula is attached as `figfig.rb`. After publishing this release, "
-        "verify the source checksum and copy the formula into "
-        "`trancore/homebrew-tap` at `Formula/figfig.rb`.\n\n"
+        "The Homebrew formula is attached as `figfig.rb`. When this release is published as latest, "
+        "GitHub Actions verifies the public source archive and updates `trancore/homebrew-tap`.\n\n"
         "Once the tap is updated:\n\n"
         "```sh\nbrew install trancore/tap/figfig\nfigfig setup\nfigfig permissions\n```\n\n"
         "macOS 13+, zsh 5.9+, Terminal.app or iTerm2. Installation builds locally "

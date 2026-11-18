@@ -59,7 +59,7 @@ class CursorIntegration(unittest.TestCase):
         try:
             ready, _, _ = select.select([process.stdout], [], [], 5)
             self.assertTrue(ready, "Bridge did not connect")
-            self.assertEqual(process.stdout.readline(), b"P 1\n")
+            self.assertEqual(process.stdout.readline(), b"P 1 1\n")
             frame = ["complete", "1", "8", str(self.directory), "echo fig", "0"]
             process.stdin.write(("\0".join(frame) + "\0").encode())
             process.stdin.flush()

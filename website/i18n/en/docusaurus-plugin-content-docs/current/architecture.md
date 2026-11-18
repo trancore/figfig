@@ -36,7 +36,7 @@ Shell-to-bridge messages contain six NUL-delimited fields in this order.
 operation, revision, cursor, cwd, buffer, selected
 ```
 
-Bridge-to-shell responses use `R revision start end visible count [quotedInsertion appendSpace]...`. Preference messages use `P historyEnabled` and reflect settings and pause state.
+Bridge-to-shell responses use `R revision start end visible count [quotedInsertion appendSpace]...`. Preference messages use `P historyEnabled popupEnabled` and reflect settings and pause state.
 
 ## Popup rendering {#ポップアップの描画}
 

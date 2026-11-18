@@ -142,7 +142,7 @@ class CliIntegration(unittest.TestCase):
         try:
             ready, _, _ = select.select([process.stdout], [], [], 8)
             self.assertTrue(ready, "Bridge did not start its helper")
-            self.assertEqual(process.stdout.readline(), b"P 1\n")
+            self.assertEqual(process.stdout.readline(), b"P 1 1\n")
             self.assertTrue((self.runtime / "app.sock").exists())
         finally:
             process.kill()

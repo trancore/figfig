@@ -18,7 +18,9 @@ The popup uses a fixed dark palette. Icon shapes also identify candidate types, 
 | Esc | Close the popup |
 | → at the end of the line | Accept the visible history suggestion |
 
-After Enter inserts a candidate, press Enter again to execute the command. Following insertion or dismissal with Esc, suggestions appear again when you edit the input. Your original zsh bindings handle keys when the popup is inactive.
+After Enter inserts a candidate, press Enter again to execute the command. Following insertion or dismissal with Esc, suggestions appear again when you edit the input.
+
+While the figfig popup is enabled, pressing Tab with no visible suggestions leaves the input unchanged. Tab uses your original zsh binding when the popup is disabled, figfig is paused, or the helper disconnects.
 
 ## Completion sources {#補完できる内容}
 

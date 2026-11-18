@@ -36,11 +36,17 @@ RPROMPT=''
 HISTFILE=/dev/null
 HISTSIZE=100
 bindkey -e
+_test_zsh_tab() {{
+  BUFFER+='__ZSH_TAB__'
+  CURSOR=$#BUFFER
+}}
+zle -N _test_zsh_tab
+bindkey '^I' _test_zsh_tab
 eval \"$({CLI} init zsh)\"
 print -s -- 'echo history_completed'
 _test_probe() {{
   print -r -- \"$BUFFER\" \"$_figfig_visible\" > \"$TEST_PROBE\"
-  print -r -- \"fds=$_figfig_read_fd,$_figfig_write_fd rev=$_figfig_revision count=${{#_figfig_insert}} monitor=$options[monitor]\" >> \"$TEST_PROBE\"
+  print -r -- \"fds=$_figfig_read_fd,$_figfig_write_fd rev=$_figfig_revision count=${{#_figfig_insert}} monitor=$options[monitor] popup=$_figfig_popup_enabled\" >> \"$TEST_PROBE\"
   print -r -- '__PROBE_READY__' > /dev/tty
 }}
 zle -N _test_probe
@@ -136,6 +142,66 @@ class ShellIntegration(unittest.TestCase):
         self.shell.wait_state(lambda _, visible: visible == "1")
         self.shell.send(b"\x1b[B\t")
         self.shell.wait_state(lambda text, visible: text == "echo figfig_two " and visible == "0")
+        self.shell.send("\t")
+        self.assertEqual(self.shell.state(), ("echo figfig_two ", "0"))
+
+    def test_tab_without_figfig_candidates_keeps_input(self):
+        command = "figfig_no_matching_command_xyz"
+        self.shell.send(command)
+        self.shell.wait_state(lambda text, visible: (text, visible) == (command, "0"))
+        self.shell.send("\t")
+        self.assertEqual(self.shell.state(), (command, "0"))
+
+    def test_tab_uses_zsh_when_figfig_popup_is_disabled_or_paused(self):
+        self.shell.send("echo fig")
+        self.shell.wait_state(lambda _, visible: visible == "1")
+        connection = self.backend.connections[-1]
+        self.shell.send(b"\x15")
+        self.shell.wait_state(lambda text, visible: (text, visible) == ("", "0"))
+
+        for popup_enabled, paused in ((False, False), (True, True)):
+            with self.subTest(popup_enabled=popup_enabled, paused=paused):
+                self.backend.send(connection, {
+                    "type": "preferences",
+                    "settings": {**self.backend.settings, "popupEnabled": popup_enabled},
+                    "paused": paused,
+                })
+                self.shell.wait_state(lambda *_: "popup=0" in self.shell.probe.read_text())
+                self.shell.send("\t")
+                self.assertEqual(self.shell.state(), ("__ZSH_TAB__", "0"))
+                self.shell.send(b"\x15")
+                self.shell.wait_state(lambda text, visible: (text, visible) == ("", "0"))
+
+                self.backend.send(connection, {
+                    "type": "preferences", "settings": self.backend.settings, "paused": False,
+                })
+                self.shell.wait_state(lambda *_: "popup=1" in self.shell.probe.read_text())
+                self.shell.send("\t")
+                self.assertEqual(self.shell.state(), ("", "0"))
+
+    def test_clearing_input_hides_popup_until_typing_resumes(self):
+        command = "echo fig"
+        self.shell.send(command)
+        self.shell.wait_state(lambda text, visible: (text, visible) == (command, "1"))
+        self.assertFalse(any(message["type"] == "hide" for message in self.backend.messages))
+
+        for method, keys in (("Backspace", b"\x7f" * len(command)), ("Ctrl-U", b"\x15")):
+            with self.subTest(method=method):
+                request = self.backend.messages[-1]["request"]
+                start = len(self.backend.messages)
+                self.shell.send(keys)
+                self.shell.wait_state(lambda text, visible: (text, visible) == ("", "0"))
+                self.assertEqual(self.shell.state(), ("", "0"))
+
+                # Receiving the next completion also waits for earlier messages on this socket.
+                self.shell.send(command)
+                self.shell.wait_state(lambda text, visible: (text, visible) == (command, "1"))
+                messages = self.backend.messages[start:]
+                hides = [message for message in messages if message["type"] == "hide"]
+                self.assertEqual(len(hides), 1, messages)
+                self.assertEqual(hides[0]["session_id"], request["sessionId"])
+                self.assertLess(request["revision"], hides[0]["revision"])
+                self.assertLess(hides[0]["revision"], messages[-1]["request"]["revision"])
 
     def test_zed_reports_the_cursor_cell_and_preserves_input_during_the_query(self):
         shell = Shell(self.directory, zed=True)
@@ -205,14 +271,16 @@ class ShellIntegration(unittest.TestCase):
         self.shell.send(b"\x1b[C")
         self.shell.wait_state(lambda text, _: text == "echo history_completed")
 
-    def test_disconnect_restores_ordinary_enter(self):
+    def test_disconnect_restores_ordinary_tab_and_enter(self):
         self.shell.send("echo fig")
         self.shell.wait_state(lambda _, visible: visible == "1")
         self.backend.close()
         self.shell.wait_state(lambda _, visible: visible == "0")
+        self.shell.send("\t")
+        self.assertEqual(self.shell.state(), ("echo fig__ZSH_TAB__", "0"))
         self.shell.send("\r")
         output = self.shell.wait_output(b"FIGFIG_PROMPT> ")
-        self.assertIn(b"\r\nfig\r\n", output)
+        self.assertIn(b"\r\nfig__ZSH_TAB__\r\n", output)
 
 
 if __name__ == "__main__":

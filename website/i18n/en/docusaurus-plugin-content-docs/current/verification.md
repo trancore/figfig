@@ -77,7 +77,7 @@ Run `figfig setup` and `figfig permissions`, open a new shell, and perform the f
 - Remove permission, stop the helper, and disable the popup. Verify ordinary Enter, history, and Tab behavior in these states.
 - Verify automatic helper startup from the shell and CLI-based control.
 - Verify pause and resume, `config set history false`, preference saving, and loading after restart.
-- Load figfig after Oh My Zsh and common prompt initialization. Disable overlapping completion integrations during these checks.
+- Load figfig after initializing the prompt and verify that completions work.
 
 ## Acceptance criteria {#完了条件}
 

@@ -45,7 +45,7 @@ printf 'export PATH=%q:$PATH\n' "$PWD/target/release"
 - 既存の`.zshrc`は、初回の変更時に`.zshrc.figfig-backup`へコピーします。
 - 管理用ブロックまたは同じ初期化行がある場合は、再実行時の追記を省略します。
 
-Oh My Zshなどの初期化後に連携を読み込んでください。同じ入力・キーを扱うFig、Amazon Q、`zsh-autosuggestions`、`zsh-autocomplete`などの機能を使用している場合は、重複する連携を無効にします。
+figfigはプロンプトやキーバインドの設定後に読み込んでください。
 
 設定を手動で管理する場合は、`.zshrc`の末尾へ次の一行を追加できます。
 

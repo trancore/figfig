@@ -1021,7 +1021,7 @@ dependencies = [
 
 [[package]]
 name = "figfig-cli"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "figfig-core",
@@ -1032,7 +1032,7 @@ dependencies = [
 
 [[package]]
 name = "figfig-core"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "serde",
@@ -1043,7 +1043,7 @@ dependencies = [
 
 [[package]]
 name = "figfig-desktop"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "core-foundation",

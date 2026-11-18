@@ -15,7 +15,7 @@ The first publication is being prepared. See the [verification record](verificat
 4. Publish the release as Latest and confirm that `Update Homebrew tap` succeeds.
 5. Check both tap CI jobs and the official installation command.
 
-Unless noted otherwise, run the following commands from the **figfig source root**. Keep `homebrew-tap` in the adjacent directory, and replace `v0.1.0` with the version being released.
+Unless noted otherwise, run the following commands from the **figfig source root**. Keep `homebrew-tap` in the adjacent directory, and replace `v0.0.1` with the version being released.
 
 ## Publish the tap repository {#初回のtap公開}
 
@@ -42,20 +42,20 @@ In `trancore/figfig`, open **Settings → Secrets and variables → Actions** an
 
 ## Create a Draft Release from a tag {#タグからdraft-releaseを作成する}
 
-1. Align versions in `package.json`, workspace `Cargo.toml`, and `src-tauri/tauri.conf.json`, and update `Cargo.lock`. The first version is `0.1.0`.
+1. Align versions in `package.json`, workspace `Cargo.toml`, and `src-tauri/tauri.conf.json`, and update `Cargo.lock`. The first version is `0.0.1`.
 2. Complete source CI, production builds, and [native verification](verification.md). Commit and push the intended source changes.
 3. Create and push a matching tag:
 
 ```sh
-git tag -a v0.1.0 -m "figfig v0.1.0"
-git push origin v0.1.0
+git tag -a v0.0.1 -m "figfig v0.0.1"
+git push origin v0.0.1
 ```
 
 `Prepare release` checks out the tagged commit and verifies versions and generated specifications. Only committed files enter the archive. Assets are saved in the `source-and-homebrew-formula` Actions artifact and a Draft Release for the same tag.
 
 | Asset | Contents |
 | --- | --- |
-| `figfig-0.1.0-source.tar.gz` | Source from the tagged commit; no compiled binaries |
+| `figfig-0.0.1-source.tar.gz` | Source from the tagged commit; no compiled binaries |
 | `SHA256SUMS` | SHA-256 of the source archive |
 | `figfig.rb` | Formula with the public release URL and checksum, published to `Formula/figfig.rb` in the tap |
 | `release-notes.md` | Source commit and installation steps; stored in the Actions artifact and used as the draft body |
@@ -63,7 +63,7 @@ git push origin v0.1.0
 To run the workflow manually for an existing tag:
 
 ```sh
-gh workflow run release.yml --repo trancore/figfig -f tag=v0.1.0
+gh workflow run release.yml --repo trancore/figfig -f tag=v0.0.1
 ```
 
 The workflow does not overwrite an existing release. If one already exists, draft creation fails; inspect the existing draft and assets. Never move a published tag.
@@ -71,7 +71,7 @@ The workflow does not overwrite an existing release. If one already exists, draf
 To prepare assets locally, use a working copy checked out at the intended tag. Python 3.11+ is required.
 
 ```sh
-python3 scripts/prepare-release.py --repository trancore/figfig --tag v0.1.0 --output release
+python3 scripts/prepare-release.py --repository trancore/figfig --tag v0.0.1 --output release
 ruby -c release/Formula/figfig.rb
 (cd release && shasum -a 256 -c SHA256SUMS)
 ```
@@ -82,18 +82,18 @@ Download the draft assets into a temporary directory:
 
 ```sh
 release_dir="$(mktemp -d)"
-gh release download v0.1.0 --repo trancore/figfig --dir "$release_dir" \
-  --pattern figfig-0.1.0-source.tar.gz --pattern SHA256SUMS --pattern figfig.rb
+gh release download v0.0.1 --repo trancore/figfig --dir "$release_dir" \
+  --pattern figfig-0.0.1-source.tar.gz --pattern SHA256SUMS --pattern figfig.rb
 (cd "$release_dir" && shasum -a 256 -c SHA256SUMS)
 ```
 
 Keep the public formula unchanged. From the source root, generate a separate formula that references the local archive and install it from a test tap. Use a test Mac without another Homebrew installation of figfig.
 
 ```sh
-source_sha="$(shasum -a 256 "$release_dir/figfig-0.1.0-source.tar.gz" | awk '{print $1}')"
+source_sha="$(shasum -a 256 "$release_dir/figfig-0.0.1-source.tar.gz" | awk '{print $1}')"
 python3 scripts/generate-formula.py \
-  --repository trancore/figfig --version 0.1.0 --sha256 "$source_sha" \
-  --source-url "file://$release_dir/figfig-0.1.0-source.tar.gz" \
+  --repository trancore/figfig --version 0.0.1 --sha256 "$source_sha" \
+  --source-url "file://$release_dir/figfig-0.0.1-source.tar.gz" \
   --output "$release_dir/tap/Formula/figfig.rb"
 git -C "$release_dir/tap" init
 git -C "$release_dir/tap" add Formula/figfig.rb

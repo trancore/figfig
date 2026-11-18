@@ -3,6 +3,14 @@ title: Verification
 description: Automated results, native checks, and remaining verification for the initial release.
 ---
 
+## figfig v0.0.1
+
+- On Apple Silicon, Clippy, Rust tests, three UI tests, 34 integration tests covering zsh, the CLI, and JetBrains, and seven packaged-helper smoke checks passed. [Preparation PR](https://github.com/trancore/figfig/pull/8)
+- Intel CI passed automated tests, the production build, and app signature verification. [Intel CI](https://github.com/trancore/figfig/actions/runs/44354192027/job/134977731504)
+- The draft source and SHA-256 matched the source used for the validation tap's audit, build, `brew test`, and removal. [v0.0.1 assets](https://github.com/trancore/figfig/releases/tag/v0.0.1)
+- On Apple Silicon, `brew install trancore/tap/figfig`, `brew test`, `figfig --version`, and `brew uninstall` succeeded with the public tap. [Published formula](https://github.com/trancore/homebrew-tap/blob/main/Formula/figfig.rb)
+- Real popup display and insertion in Terminal.app and iTerm2, along with upgrades to the next public version, still need testing.
+
 ## Integrated terminals, 2026-11-18
 
 Rust (27), integration (27), and UI (3) tests passed on Apple Silicon/macOS 27.0.1, along with Clippy, TypeScript checks, and both documentation builds. Integration covers real host ancestry through PTY helpers, shared setup aliases in disposable homes, native geometry IPC, legacy coordinate frames, and stale-response rejection. The JetBrains plugin ZIP was compiled against IntelliJ IDEA 2025.3.2/JDK 21. Its real Java socket fixture checks zero-height normalization, pane identity, composition state, search exclusion, malformed/wrong-PID/insecure-socket rejection, and cleanup. The fixture supplies geometry rather than running an IDE.

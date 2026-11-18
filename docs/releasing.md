@@ -4,7 +4,7 @@
 
 ## 公開までの流れ
 
-初回公開は準備中です。ローカルでの検証結果は[検証記録](verification.md#2026-11-18のhomebrew公開準備の確認結果)を参照してください。
+初回リリースは v0.0.1 です。確認結果は[検証記録](verification.md)を参照してください。
 
 1. tapリポジトリを公開し、本体にtap更新用のActionsシークレットを設定する。
 2. 本体の配布対象コミットへタグを付け、Draft Releaseを生成する。
@@ -96,6 +96,7 @@ git -C "$release_dir/tap" init
 git -C "$release_dir/tap" add Formula/figfig.rb
 git -C "$release_dir/tap" commit -m "test: local source release"
 brew tap --custom-remote trancore/figfig-validation "$release_dir/tap"
+brew trust --formula trancore/figfig-validation/figfig
 brew style trancore/figfig-validation/figfig
 brew audit --strict trancore/figfig-validation/figfig
 brew install --build-from-source trancore/figfig-validation/figfig
@@ -109,6 +110,7 @@ brew test trancore/figfig-validation/figfig
 ```sh
 figfig stop
 brew uninstall trancore/figfig-validation/figfig
+brew untrust --formula trancore/figfig-validation/figfig
 brew untap trancore/figfig-validation
 ```
 
@@ -132,7 +134,7 @@ figfig permissions
 gh workflow run update-homebrew-tap.yml --repo trancore/figfig
 ```
 
-初回の正式導入が確認できたら、tapのREADME、本体README、日英のインストールページ、サイトトップの日英文言の「公開準備中」を削除し、日英の対応環境・検証記録を実際の結果で更新します。
+公開後は、日英の対応環境と検証記録を実際の結果に合わせて更新します。
 
 更新時も新しいタグで同じ手順を繰り返します。既存ユーザーは `figfig stop`、`brew update`、`brew upgrade trancore/tap/figfig` の順に実行し、新しいzshセッションを開きます。
 

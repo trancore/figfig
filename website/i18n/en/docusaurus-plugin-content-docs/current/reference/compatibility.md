@@ -47,6 +47,6 @@ Integrated-terminal coordinate conversion, stale-response rejection, native trac
 
 Automated tests, production builds, signing, and communication with the real helper have been checked on Apple Silicon and macOS. Basic popup display in Terminal.app and iTerm2 was manually confirmed before the CLI-only workflow was introduced.
 
-Homebrew distribution is being prepared. Source builds, installation, formula audits, tests, and removal through a local validation tap were verified on Apple Silicon and macOS 27.0.1. Installation from a public release through the official tap remains a post-publication check. See the [release guide](../releasing.md) for the procedure.
+Install v0.0.1 from the `trancore/tap` Homebrew tap. Homebrew builds from the source archive attached to the GitHub release. See the [installation guide](../getting-started/installation.md) for the steps.
 
-Intel builds, detailed IME behavior, mixed-scale displays, full-screen operation, and installation, upgrades, and removal through a public tap remain unverified. See the [verification record](../verification.md) for results and procedures.
+Detailed IME behavior, mixed-scale displays, full-screen operation, and upgrades between published versions still need testing. See the [verification record](../verification.md) for build and installation results.

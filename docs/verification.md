@@ -1,5 +1,13 @@
 # 検証
 
+## figfig v0.0.1
+
+- Apple Silicon で Rust の Clippy とテスト、UI テスト3件、zsh・CLI・JetBrains を含む統合テスト34件、パッケージ済みヘルパーの起動・通信・停止など7項目を確認しました。[準備 PR](https://github.com/trancore/figfig/pull/8)
+- Intel の CI で自動テスト、本番ビルド、アプリの署名検査が成功しました。[Intel CI](https://github.com/trancore/figfig/actions/runs/44354192027/job/134977731504)
+- Draft のソースと SHA-256 を検証し、検証専用 tap で監査・ビルド・`brew test`・削除に使ったソースと一致することを確認しました。[v0.0.1 の成果物](https://github.com/trancore/figfig/releases/tag/v0.0.1)
+- Apple Silicon で公開 tap から `brew install trancore/tap/figfig`、`brew test`、`figfig --version`、`brew uninstall` が成功しました。[公開 Formula](https://github.com/trancore/homebrew-tap/blob/main/Formula/figfig.rb)
+- Terminal.app／iTerm2 での候補表示・挿入などの実画面操作と、次の公開版へのアップグレードは検証が残っています。
+
 ## 2026-11-18の内蔵ターミナル連携
 
 - Apple Silicon・macOS 27.0.1でRust 27件、CLI・シェル・ネイティブ・JetBrains統合27件、UI 3件が成功。Clippy（警告をエラー扱い）、TypeScript検査、日英ドキュメントの型検査・ビルドが成功。

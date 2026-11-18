@@ -21,7 +21,7 @@
     "message": "CLI reference"
   },
   "homepage.releaseNote": {
-    "message": "The Homebrew tap (trancore/tap) is being prepared. You can install from source today."
+    "message": "Install figfig with Homebrew."
   },
   "homepage.demo.caption": {
     "message": "Completion popup example"

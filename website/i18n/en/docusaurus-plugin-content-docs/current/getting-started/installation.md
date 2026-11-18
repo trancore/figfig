@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Requirements, building figfig from source, zsh integration, and macOS permissions.
+description: Requirements, Homebrew installation, building figfig from source, zsh integration, and macOS permissions.
 ---
 
 figfig is a CLI tool that adds a completion popup and inline history suggestions to zsh. Once you enable the shell integration, each new zsh session automatically starts the background popup helper.
@@ -16,9 +16,23 @@ figfig is a CLI tool that adds a completion popup and inline history suggestions
 
 See [Compatibility](../reference/compatibility.md) for the supported scope and verification status.
 
+## Install with Homebrew {#homebrewでの導入予定}
+
+Install figfig with Homebrew, then set up zsh integration and macOS permissions.
+
+```bash
+brew install trancore/tap/figfig
+figfig setup
+figfig permissions
+```
+
+Homebrew also builds from source. Install the Xcode Command Line Tools first; Homebrew installs Node.js, pnpm, and Rust as build dependencies. The CLI is installed at `bin/figfig`, with the private helper at `libexec/figfig.app`.
+
+To upgrade, run `figfig stop`, `brew update`, and `brew upgrade trancore/tap/figfig`, then open a new zsh session. macOS may ask you to grant permission again after an upgrade.
+
 ## Build from source {#ソースから導入する}
 
-The Homebrew tap `trancore/tap` (GitHub repository: `trancore/homebrew-tap`) is being prepared. For now, use the site's GitHub link to obtain the source, then run the build commands from the root of the figfig source directory.
+Get the source from GitHub, then run the build commands from the root of the figfig source directory.
 
 Install Node.js 24.15+ on the 24.x line, or 26+, pnpm 12.21.0, Rust 1.90 or later, and the Xcode Command Line Tools.
 
@@ -107,20 +121,6 @@ figfig doctor
 ```
 
 If suggestions do not appear, see [Troubleshooting](../guides/troubleshooting.md).
-
-## Planned Homebrew installation {#homebrewでの導入予定}
-
-After the first GitHub Release and formula are published, install with the following command. Until then, use the source build above.
-
-```bash
-brew install trancore/tap/figfig
-figfig setup
-figfig permissions
-```
-
-Homebrew also builds from source. Install the Xcode Command Line Tools first; Homebrew installs Node.js, pnpm, and Rust as build dependencies. The CLI is installed at `bin/figfig`, with the private helper at `libexec/figfig.app`.
-
-To upgrade, run `figfig stop`, `brew update`, and `brew upgrade trancore/tap/figfig`, then open a new zsh session. macOS may ask you to grant permission again after an upgrade.
 
 ## Remove shell integration {#連携を解除する}
 

@@ -1,5 +1,16 @@
 # 検証
 
+## 2026-11-18の内蔵ターミナル連携
+
+- Apple Silicon・macOS 27.0.1でRust 27件、CLI・シェル・ネイティブ・JetBrains統合27件、UI 3件が成功。Clippy（警告をエラー扱い）、TypeScript検査、日英ドキュメントの型検査・ビルドが成功。
+- 最終の本番ビルドとad-hoc署名検査が成功。実際のパッケージ済み描画ヘルパーで自動起動、設定通知、一時停止／再開、doctor、不正な登録パスの拒否、補完応答、正常終了の7項目を確認し、通常のヘルパー起動へ戻した。実際の `.zshrc` は変更していない。
+- VSCode・Cursor・Zed・主要JetBrains IDEの共通ホスト定義を追加。VSCode／CursorのPTYホスト、JetBrainsのpty4jヘルパーを経由しても実際のホストPIDを特定することを、実プロセスとRustブリッジで検証。
+- 共通の `figfig setup terminal` と従来の `setup zed` が同じカーソル取得ヘルパーを導入・削除し、再実行で重複しないことを一時HOMEで検証。
+- VSCode／Cursorはxterm入力欄のDOMクラスを確認してAccessibility座標を優先し、InputMethodKitを補助として使う。ZedはInputMethodKitを継続。旧座標フレームとの互換、座標原点の違い、期限切れ・異なるPID／要求IDの応答拒否を検証。
+- IntelliJ IDEA 2025.3.2のSDK・付属JDK 21でJetBrainsプラグインZIPをビルド。実Javaアダプターと一時Unixソケットで、JediTermの高さ0の正規化、ペイン識別、IME変換状態、検索欄の除外、不正フレーム・PID不一致・公開ソケットの拒否、接続終了後のソケット削除を検証。UI座標はテスト用fixtureであり、実IDEの表示確認ではない。
+- VSCodeの実画面では内蔵ターミナルの入力欄を確認したが、自動入力で表示状態の変化を確認できず、実際のポップアップ表示・挿入の受け入れ確認は未完了。更新後の共通入力メソッドはmacOSによる有効化が必要で、今回のセットアップはOS側で拒否された。ログアウト・ログイン後の `figfig setup terminal` 再実行とエディタ再起動が必要。
+- VSCode／Cursor／Zedの実表示、JetBrains Classic／Reworkedの実機確認、製品ごとの互換性、日本語IME、分割ペイン、ズーム、複数画面は未確認。識別対応・自動テスト成功を実機の動作確認済みとは扱わない。
+
 ## 2026-11-18のHomebrew公開準備の確認結果
 
 - Apple Silicon・macOS 27.0.1で、コミット `d4e29633a41f5b22564b0c12b8e682665315116e` のソースアーカイブを検証専用tapからHomebrewでビルド・インストール。公開用tapにはローカル検証用Formulaを配置していない。

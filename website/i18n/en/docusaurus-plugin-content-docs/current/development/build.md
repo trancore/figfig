@@ -77,3 +77,7 @@ This test requires macOS with a display. See the [verification record](../verifi
 | `website/i18n/en/docusaurus-plugin-content-docs/current` | English documentation source |
 
 See [Releasing](../releasing.md) for application distribution and [Documentation site](documentation.md) for website development and publishing.
+
+## JetBrains plugin
+
+Run `python3 scripts/build-jetbrains-plugin.py --ide '/Applications/IntelliJ IDEA.app'` to generate `target/editors/figfig-terminal.zip`. The installed IDE supplies the JDK and compile-time platform libraries. `test:shell` includes the real Java adapter IPC test when this SDK is available; set `FIGFIG_JETBRAINS_IDE` to another installed JetBrains app. Runners without an IDE SDK explicitly skip this test.

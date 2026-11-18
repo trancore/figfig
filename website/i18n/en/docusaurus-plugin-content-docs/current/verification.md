@@ -3,6 +3,14 @@ title: Verification
 description: Automated results, native checks, and remaining verification for the initial release.
 ---
 
+## Integrated terminals, 2026-11-18
+
+Rust (27), integration (27), and UI (3) tests passed on Apple Silicon/macOS 27.0.1, along with Clippy, TypeScript checks, and both documentation builds. Integration covers real host ancestry through PTY helpers, shared setup aliases in disposable homes, native geometry IPC, legacy coordinate frames, and stale-response rejection. The JetBrains plugin ZIP was compiled against IntelliJ IDEA 2025.3.2/JDK 21. Its real Java socket fixture checks zero-height normalization, pane identity, composition state, search exclusion, malformed/wrong-PID/insecure-socket rejection, and cleanup. The fixture supplies geometry rather than running an IDE.
+
+The final production build and ad-hoc signature verification passed. The packaged helper passed seven CLI smoke checks: automatic startup, preference updates, pause/resume, doctor, invalid cursor-registration path rejection, completion responses, and shutdown. Normal helper startup was restored afterward; the real `.zshrc` was unchanged.
+
+VSCode's terminal input was observed, but automated input did not produce a verifiable screen change. The updated InputMethodKit tracker also needs macOS activation, which was refused during setup. Log out/in, retry `figfig setup terminal`, and restart the editor. Real popup placement/insertion in VSCode/Cursor/Zed, JetBrains Classic/Reworked, product-specific compatibility, IME, pane switching, zoom, and mixed-scale displays remain unverified. Registry and fixture coverage do not constitute real-IDE acceptance.
+
 ## Homebrew preparation results recorded on 2026-11-18 {#2026-11-18のhomebrew公開準備の確認結果}
 
 - Built and installed a source archive of commit `d4e29633a41f5b22564b0c12b8e682665315116e` through a disposable Homebrew tap on Apple Silicon and macOS 27.0.1. The local validation formula was kept out of the public tap directory.

@@ -46,9 +46,9 @@ Candidate labels and icons use seven type-specific colors. The selected row has 
 
 ## Position and focus {#位置フォーカス}
 
-Zed uses an optional palette InputMethodKit helper embedded in the CLI and registered with `figfig setup zed`. The popup helper requests geometry via a distributed notification. The tracker returns a `cursorPosition` message containing only a request ID, PID, coordinates, line height, and focus identifier through the private Unix socket. It does not handle keystrokes or read text. Replies must match the request ID and PID within 500ms. Position changes close visible suggestions to avoid moving them into another pane or the editor.
+Zed uses an optional palette InputMethodKit helper embedded in the CLI and registered with `figfig setup terminal`. The popup helper requests geometry via a distributed notification. The tracker returns a `cursorPosition` message containing only a request ID, PID, coordinates, line height, and focus identifier through the private Unix socket. It does not handle keystrokes or read text. Replies must match the request ID and PID within 500ms. Position changes close visible suggestions to avoid moving them into another pane or the editor.
 
-At startup, the bridge walks its parent processes to identify Terminal.app or iTerm2. The helper shows the popup when that PID matches the foreground application and the focused element exposes its insertion position.
+At startup, the bridge walks its parent processes to identify the supported terminal/editor main process. The helper shows the popup when that PID matches the foreground application and the focused element exposes its insertion position.
 
 Position lookup uses Accessibility's `AXSelectedTextRange` and `AXBoundsForRange`. If bounds for a zero-length range are unavailable, it uses the right edge of the preceding character. Coordinates are converted to AppKit screen coordinates, and the popup can move above the cursor near the screen edge. Visible position and focus are checked every 120ms.
 
@@ -65,3 +65,7 @@ Settings are replaced atomically by renaming a temporary file. Logs exclude inpu
 `setup` backs up existing zsh configuration and appends a managed block. `config` reads and writes settings even while the helper is stopped. A running helper receives `reloadSettings` and broadcasts `preferences` to connected shells. `setPaused` and `requestAccessibility` also use the Unix socket. The WebView's exposed command reads completion state.
 
 If the socket is unavailable, the bridge directly starts the bundled popup helper in its own process group. Standard streams are detached, while runtime and configuration environment variables are inherited. The helper can continue running after a terminal closes. The macOS app bundle supplies permission identity and native popup rendering, and the CLI provides the user-facing controls.
+
+## Editor adapters
+
+`assets/terminal-hosts.json` is the shared registry embedded in Rust and the native cursor tracker. VSCode/Cursor validate the xterm textarea class through Accessibility before positioning the popup. Direct AX geometry is preferred; InputMethodKit is the fallback. JetBrains uses a plugin socket named `jb-<PID>.sock` in the same private runtime directory. Requests contain a request ID and IDE PID; the plugin captures terminal geometry and focus on the EDT, then sends the existing `cursorPosition` message to `app.sock`. It handles no key events or terminal text. It observes only the length of active IME composition to suppress suggestions. A zero-height JediTerm point is normalized using the focused component's font metrics. `coordinateSystem` defaults to `appKit` for existing frames; adapters send `accessibility` for top-left screen points. Both routes retain request-ID/PID/deadline and session-revision checks. Tracked popups close when geometry or terminal focus changes.

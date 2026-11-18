@@ -4,9 +4,11 @@
 
 zshにFig風の補完ポップアップと、履歴に基づくインライン予測を追加するCLIツールです。導入・設定・一時停止はすべて`figfig`コマンドで操作します。
 
-**対象：macOS 13以降、zsh 5.9以降、Terminal.app／iTerm2／Zedの内蔵ターミナル。** Terminal.app／iTerm2ではmacOSのアクセシビリティ権限、Zedでは追加のカーソル位置取得用ヘルパーが必要です。
+**対象：macOS 13以降、zsh 5.9以降。** Terminal.app／iTerm2に加え、VSCode・Cursor・Zed・主要JetBrains IDEの内蔵ターミナルを識別します。エディタ連携の実機確認状況は[対応環境](docs/reference/compatibility.md)を参照してください。
 
-Zedでは通常のzsh連携に加えて `figfig setup zed` を実行し、macOSの「figfig Cursor Tracking」の有効化を許可してください。キーボード入力を処理しないパレット型入力メソッドを登録し、Zedのカーソル座標だけを既存のポップアップへ渡します。登録後はZedを再起動します。削除は `figfig setup zed --remove` で行えます。
+VSCode・Cursorは `figfig permissions` でアクセシビリティを許可し、位置取得の補助には `figfig setup terminal` を使います。Zedは `figfig setup terminal` で共通カーソル取得ヘルパーを登録し、macOSの「figfig Cursor Tracking」を許可してエディタを再起動します。従来の `figfig setup zed` も利用できます。共有ヘルパーの削除は `figfig setup terminal --remove` です。
+
+JetBrains系ではfigfig Terminalプラグインを使います。`python3 scripts/build-jetbrains-plugin.py` で `target/editors/figfig-terminal.zip` を生成し、IDEのPluginsから導入します。詳しい[内蔵ターミナルの導入手順](docs/getting-started/installation.md#jetbrains系の内蔵ターミナルで使う)を参照してください。
 
 ## 導入
 
@@ -133,6 +135,6 @@ The compact popup displays one candidate per row and uses seven colors for candi
 
 Use `figfig config`, `figfig config set history false`, `figfig pause`, `figfig resume`, and `figfig doctor` from your terminal. Setup preserves the existing `.zshrc`, creates a backup, and avoids duplicate entries. Settings are persistent and propagated to connected shells; pause is temporary.
 
-Build with `pnpm install --frozen-lockfile --ignore-scripts` and `pnpm run build:release`. The Homebrew formula installs the CLI in `bin` and its native popup helper privately in `libexec`. The public tap `trancore/tap` (GitHub repository: `trancore/homebrew-tap`) is being prepared. After publication, install with `brew install trancore/tap/figfig`. Until then, use the source build above. Maintainers can follow the [release guide](website/i18n/en/docusaurus-plugin-content-docs/current/releasing.md). Terminal.app, iTerm2, and Zed’s integrated terminal are supported on macOS. Zed requires the optional cursor tracker installed with `figfig setup zed`; SSH, tmux, other shells, and AI are outside the initial release.
+Build with `pnpm install --frozen-lockfile --ignore-scripts` and `pnpm run build:release`. The Homebrew formula installs the CLI in `bin` and its native popup helper privately in `libexec`. The public tap `trancore/tap` (GitHub repository: `trancore/homebrew-tap`) is being prepared. After publication, install with `brew install trancore/tap/figfig`. Until then, use the source build above. Maintainers can follow the [release guide](website/i18n/en/docusaurus-plugin-content-docs/current/releasing.md). Recognized macOS hosts include Terminal.app, iTerm2, VSCode, Cursor, Zed, and major JetBrains IDEs. VSCode/Cursor use Accessibility with an optional `figfig setup terminal` tracker fallback; Zed requires that tracker. JetBrains uses the figfig Terminal plugin built with `python3 scripts/build-jetbrains-plugin.py`. See the installation guide and compatibility matrix for requirements and verification status. SSH, tmux, other shells, and AI are outside this release.
 
 MIT License.

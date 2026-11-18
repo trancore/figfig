@@ -24,7 +24,7 @@ figfig doctor
 
 If `figfig complete 'git ch'` returns entries in `candidates`, completion data is being generated. Check the position and permission information in `doctor` when diagnosing popup display.
 
-For Zed, also run `figfig setup zed`, allow macOS to enable “figfig Cursor Tracking”, then restart Zed and open a new zsh terminal. If registration is not recognized, log out and back in before retrying. Zed uses InputMethodKit for cursor positioning; granting Accessibility alone is insufficient.
+For Zed, also run `figfig setup terminal`, allow macOS to enable “figfig Cursor Tracking”, then restart Zed and open a new zsh terminal. If registration is not recognized, log out and back in before retrying. Zed uses InputMethodKit for cursor positioning; granting Accessibility alone is insufficient.
 
 ## The helper cannot be found {#ヘルパーが見つからない}
 
@@ -60,3 +60,7 @@ figfig closes the popup when focus moves to another app, tab, or pane, or when c
 Current builds use ad-hoc signing. If an updated bundle requires permission, run `figfig permissions` and check the figfig entry in System Settings.
 
 When reporting a reproducible issue, include your macOS, terminal, zsh, and figfig versions, along with minimal reproduction steps. Review diagnostic output for personal paths such as your home directory before sharing it.
+
+## Integrated terminal adapters
+
+VSCode/Cursor require Accessibility permission and a focused terminal input. If direct geometry is unavailable, run `figfig setup terminal`, allow Cursor Tracking, and restart the editor. For JetBrains, install figfig Terminal and open a project. A missing `jb-<PID>.sock` indicates that the plugin is not running or the IDE and helper use different `FIGFIG_RUNTIME_DIR` values. Check `figfig doctor` from the affected terminal. Disable overlapping editor terminal completion if both systems display suggestions.

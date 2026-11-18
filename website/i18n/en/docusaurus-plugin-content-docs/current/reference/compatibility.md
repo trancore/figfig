@@ -9,11 +9,21 @@ description: Supported operating systems, terminals, shell syntax, and verificat
 | --- | --- |
 | OS | macOS 13 or later |
 | Shell | zsh 5.9 or later |
-| Terminal | Terminal.app, iTerm2, and Zed's integrated terminal |
+| Terminal | Terminal.app, iTerm2, VSCode, Cursor, Zed, and major JetBrains IDEs |
 | Keymaps | emacs and vi insert mode |
 | Candidate sources | Local command definitions, PATH, files, Git branches, and package scripts |
 
 SSH sessions, tmux, other shells, and other terminals are outside the initial release scope.
+
+## Integrated terminal requirements
+
+| Host | Position/focus provider | Verification |
+| --- | --- | --- |
+| VSCode stable / Insiders, Cursor | Accessibility; optional InputMethodKit fallback | Registry, native geometry, and PTY ancestry tests; real popup acceptance pending |
+| Zed stable / Preview / Nightly | InputMethodKit (`figfig setup terminal`) | Registry, native geometry, IPC, and ancestry tests; real popup acceptance pending |
+| IntelliJ IDEA, PyCharm, WebStorm, GoLand, CLion, Rider, RubyMine, DataGrip, RustRover, Android Studio | figfig Terminal plugin | Plugin build against installed IntelliJ SDK and real Java IPC tested; per-product acceptance pending |
+
+JetBrains Classic and Reworked are targets; deprecated Experimental 2024 is excluded. Product recognition is not evidence that all versions and terminal engines have passed real UI checks. See the [installation guide](../getting-started/installation.md#zedの内蔵ターミナルで使う).
 
 ## Input parsing {#入力の解析}
 
@@ -29,11 +39,11 @@ See [Adding command definitions](../development/specifications.md) to define add
 
 ## Permission and focus {#権限フォーカス}
 
-Cursor position comes from macOS Accessibility. The popup is shown when a supported terminal is in the foreground and its PID matches the shell's terminal PID.
+Terminal.app/iTerm2 use macOS Accessibility. VSCode/Cursor first use Accessibility geometry after verifying the focused xterm input class, with the shared InputMethodKit tracker as a fallback. Zed uses that tracker; JetBrains uses its plugin. The popup is shown when a supported terminal is in the foreground and its PID matches the shell's terminal PID.
 
 ## Verification status {#検証状況}
 
-Zed requires the optional InputMethodKit cursor tracker installed with `figfig setup zed`. Stable, Preview, and Nightly app processes are recognized. Geometry conversion, stale-response rejection, and native tracker IPC are covered by automated tests. Actual popup placement, IME use, and pane switching with the registered tracker require manual verification.
+Integrated-terminal coordinate conversion, stale-response rejection, native tracker IPC, editor-host ancestry, setup aliases, and the JetBrains plugin socket are covered by automated tests. Real popup placement, IME use, and pane switching require separate acceptance checks.
 
 Automated tests, production builds, signing, and communication with the real helper have been checked on Apple Silicon and macOS. Basic popup display in Terminal.app and iTerm2 was manually confirmed before the CLI-only workflow was introduced.
 

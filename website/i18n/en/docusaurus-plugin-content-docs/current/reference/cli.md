@@ -8,6 +8,9 @@ description: figfig commands, arguments, configuration keys, and exit codes.
 | Command | Action |
 | --- | --- |
 | `figfig setup` | Add integration to `.zshrc` and back up an existing file |
+| `figfig setup terminal` | Install and enable the shared integrated-terminal cursor tracker |
+| `figfig setup terminal --remove` | Disable and remove the shared tracker |
+| `figfig setup zed` | Compatibility alias for `setup terminal` (also accepts `--remove`) |
 | `figfig init zsh` | Print the zsh integration script to standard output |
 | `figfig permissions` | Start the helper and check or request macOS permission |
 

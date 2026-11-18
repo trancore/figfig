@@ -11,8 +11,8 @@ figfigはzshに補完ポップアップと履歴に基づくインライン予�
 | --- | --- |
 | OS | macOS 13以降 |
 | シェル | zsh 5.9以降 |
-| ターミナル | Terminal.app、iTerm2、Zedの内蔵ターミナル |
-| 権限 | Terminal.app／iTerm2はアクセシビリティ、Zedは追加のカーソル位置取得用ヘルパーの有効化 |
+| ターミナル | Terminal.app、iTerm2、VSCode・Cursor・Zed・JetBrains系の内蔵ターミナル |
+| 権限 | Terminal.app／iTerm2／VSCode／Cursorはアクセシビリティ。Zedは共通ヘルパー、JetBrains系は専用プラグイン |
 
 対応範囲と確認状況は[対応環境](../reference/compatibility.md)に記載しています。
 
@@ -61,19 +61,35 @@ figfig permissions
 
 開いたシステム設定でfigfigを有効にします。macOSのバージョンによって、項目は「アクセシビリティ」または「デバイスの制御とデータへのアクセス」と表示されます。権限を許可すると、最前面のターミナルの入力位置を取得して候補を配置できます。
 
-## Zedの内蔵ターミナルで使う
+## VSCode・Cursor・Zedの内蔵ターミナルで使う {#zedの内蔵ターミナルで使う}
 
-通常のzsh連携に加えて、次を実行します。
+VSCode・Cursor・Zedには共通のカーソル取得ヘルパーを用意しています。
 
 ```bash
-figfig setup zed
+figfig setup terminal
 ```
 
-`~/Library/Input Methods/figfig Cursor.app`へカーソル位置取得用ヘルパーを導入します。macOSが「figfig Cursor Tracking」の有効化を求めたら許可し、Zedを再起動して新しいzshターミナルを開いてください。macOSが登録を認識しない場合は、一度ログアウト・ログインして同じコマンドを再実行します。
+`~/Library/Input Methods/figfig Cursor.app`へパレット型入力メソッドを導入します。macOSが「figfig Cursor Tracking」の有効化を求めたら許可し、エディタを再起動して新しいローカルzshターミナルを開いてください。登録が認識されない場合はログアウト・ログインして再実行します。キーイベントや入力テキストを取得せず、キーボード配列や日本語入力を切り替えません。
 
-このヘルパーはパレット型入力メソッドです。キーイベントを処理せず、キーボード配列や日本語入力を切り替えません。Zedの入力位置の座標だけを取得し、通常と同じ別ウィンドウのポップアップを表示します。
+VSCode・Cursorでは `figfig permissions` でアクセシビリティ権限も許可してください。ターミナル入力欄を識別し、取得できる場合はAccessibilityから直接位置を取得します。取得できない場合は共通ヘルパーを使います。ZedはInputMethodKitによる取得を使います。
 
-更新後は `figfig setup zed` を再実行してください。連携を削除するときは、CLIを削除する前に `figfig setup zed --remove` を実行します。
+更新後は同じコマンドを再実行します。削除は `figfig setup terminal --remove` です。既存の `figfig setup zed` と `figfig setup zed --remove` も同じ共有ヘルパーを操作する互換コマンドとして使えます。
+
+## JetBrains系の内蔵ターミナルで使う
+
+通常の `figfig setup` に加え、figfig Terminalプラグインを導入します。プラグインはターミナルのフォーカスとカーソル座標・行高、IME変換状態だけを扱い、入力文字列やキーを補完ヘルパーへ送りません。
+
+ソースのルートで、導入済みのJetBrains IDEを指定してビルドします。IDEに付属するJDKとライブラリを使い、SDKの追加ダウンロードは行いません。
+
+```bash
+python3 scripts/build-jetbrains-plugin.py --ide '/Applications/IntelliJ IDEA.app'
+```
+
+IDEのSettings → Plugins → 歯車 → Install Plugin from Diskから `target/editors/figfig-terminal.zip` を選び、IDEを再起動してプロジェクトとローカルzshターミナルを開きます。ClassicとReworkedを検証対象とし、廃止済みのExperimental 2024は対象外です。組み込みの補完候補が重なる場合はIDE側のターミナル補完を無効にしてください。
+
+IntelliJ IDEA、PyCharm、WebStorm、GoLand、CLion、Rider、RubyMine、DataGrip、RustRover、Android Studioを識別します。プラグインはビルド243以降のターミナルプラグインを持つIDE向けです。製品ごとの実機確認状況は[対応環境](../reference/compatibility.md)を参照してください。
+
+JetBrainsの座標取得には入力メソッドの登録は不要です。`FIGFIG_RUNTIME_DIR`を変更する開発環境では、IDEとfigfigの両方を同じ値で起動します。削除はIDEのPluginsからfigfig Terminalをアンインストールします。
 
 ## 動作を確認する
 

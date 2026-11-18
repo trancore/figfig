@@ -8,6 +8,9 @@ description: figfig CLIのコマンド、引数、設定キー、終了コード
 | コマンド | 動作 |
 | --- | --- |
 | `figfig setup` | `.zshrc`へ連携を追加。既存ファイルのバックアップを作成 |
+| `figfig setup terminal` | 内蔵ターミナル用の共通カーソル取得ヘルパーを導入・有効化 |
+| `figfig setup terminal --remove` | 共通ヘルパーを無効化・削除 |
+| `figfig setup zed` | `setup terminal`の互換コマンド（`--remove`も利用可能） |
 | `figfig init zsh` | zsh連携スクリプトを標準出力へ出力 |
 | `figfig permissions` | ヘルパーを起動し、macOSの権限を確認・要求 |
 

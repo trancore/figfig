@@ -9,6 +9,7 @@ fn request(cwd: &std::path::Path, buffer: &str) -> CompletionRequest {
         cursor: buffer.chars().count(),
         cwd: cwd.to_string_lossy().into(),
         terminal_pid: 0,
+        terminal_size: None,
     }
 }
 

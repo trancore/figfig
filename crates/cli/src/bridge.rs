@@ -1,11 +1,13 @@
 use crate::helper::ensure_running;
 use anyhow::{bail, Result};
 use figfig_core::{
+    protocol::TerminalSize,
     runtime,
     transport::{write_frame, FrameReader},
     ClientMessage, CompletionRequest, CompletionResponse, ServerMessage, MAX_FRAME,
 };
 use std::{
+    fs::File,
     io::{BufRead, Write},
     process::Command,
 };
@@ -16,6 +18,11 @@ pub async fn run(session_id: String) -> Result<()> {
     ensure_running().await?;
     let stream = UnixStream::connect(&path).await?;
     let terminal_pid = find_terminal_pid();
+    let zed_tty = if std::env::var_os("TERM_PROGRAM").is_some_and(|host| host == "zed") {
+        File::open("/dev/tty").ok()
+    } else {
+        None
+    };
     let (sender, mut receiver) = tokio::sync::mpsc::channel::<[String; 6]>(32);
     // Input is fixed-field NUL framing. No shell code is evaluated in either direction.
     std::thread::spawn(move || {
@@ -35,7 +42,7 @@ pub async fn run(session_id: String) -> Result<()> {
         tokio::select! {
             fields = receiver.recv() => {
                 let Some(fields) = fields else { break; };
-                let [operation, revision, cursor, cwd, buffer, selected] = fields;
+                let [operation, revision, cursor, cwd, buffer, detail] = fields;
                 let revision = revision.parse::<u64>().unwrap_or(0);
                 let message = match operation.as_str() {
                     "complete" => {
@@ -49,13 +56,14 @@ pub async fn run(session_id: String) -> Result<()> {
                                 cwd,
                                 buffer,
                                 terminal_pid,
+                                terminal_size: zed_tty.as_ref().and_then(|tty| terminal_size(tty, &detail)),
                             },
                         }
                     }
                     "select" => ClientMessage::Select {
                         session_id: session_id.clone(),
                         revision,
-                        selected: selected.parse().unwrap_or(0),
+                        selected: detail.parse().unwrap_or(0),
                     },
                     "hide" => {
                         latest_revision = revision;
@@ -84,6 +92,37 @@ pub async fn run(session_id: String) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(target_os = "macos")]
+fn terminal_size(tty: &File, cursor: &str) -> Option<TerminalSize> {
+    use figfig_core::protocol::TerminalCell;
+    use std::os::fd::AsRawFd;
+
+    let mut size: libc::winsize = unsafe { std::mem::zeroed() };
+    if unsafe { libc::ioctl(tty.as_raw_fd(), libc::TIOCGWINSZ, &mut size) } != 0
+        || size.ws_xpixel == 0
+        || size.ws_ypixel == 0
+    {
+        return None;
+    }
+    Some(TerminalSize {
+        width: size.ws_xpixel,
+        height: size.ws_ypixel,
+        cursor: cursor.split_once(';').and_then(|(row, column)| {
+            Some(TerminalCell {
+                row: row.parse().ok()?,
+                column: column.parse().ok()?,
+                rows: size.ws_row,
+                columns: size.ws_col,
+            })
+        }),
+    })
+}
+
+#[cfg(not(target_os = "macos"))]
+fn terminal_size(_: &File, _: &str) -> Option<TerminalSize> {
+    None
 }
 
 fn write_shell_response(response: &CompletionResponse) -> Result<()> {

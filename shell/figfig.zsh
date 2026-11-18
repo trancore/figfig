@@ -15,11 +15,57 @@ typeset -gi _figfig_start=0 _figfig_end=0 _figfig_read_fd=-1 _figfig_write_fd=-1
 typeset -g _figfig_last_buffer='' _figfig_suppressed='' _figfig_helper_pid=''
 typeset -ga _figfig_insert=() _figfig_space=()
 typeset -gA _figfig_original=()
+typeset -gi _figfig_zed_fd=-1
+typeset -g _figfig_zed_cursor=''
+typeset -gF _figfig_zed_retry=0
 
 _figfig_send() {
   (( _figfig_write_fd >= 0 )) || return 0
   # Six NUL-delimited fields, written using zsh builtins only.
-  print -rn -u $_figfig_write_fd -- "$1"$'\0'"$_figfig_revision"$'\0'"$CURSOR"$'\0'"$PWD"$'\0'"$BUFFER"$'\0'"$(( _figfig_selected - 1 ))"$'\0' 2>/dev/null || _figfig_disconnect
+  local detail=$(( _figfig_selected - 1 ))
+  [[ $1 == complete ]] && detail=$_figfig_zed_cursor
+  print -rn -u $_figfig_write_fd -- "$1"$'\0'"$_figfig_revision"$'\0'"$CURSOR"$'\0'"$PWD"$'\0'"$BUFFER"$'\0'"$detail"$'\0' 2>/dev/null || _figfig_disconnect
+}
+
+_figfig_zed_read_cursor() {
+  emulate -L zsh
+  local bytes=$1 chunk MATCH
+  local -a match
+  local -i MBEGIN MEND
+  local -F deadline=$(( EPOCHREALTIME + 0.040 )) remaining
+  # A device status reply marks the report so a modified F3 key (also ending
+  # in CSI row;column R) on its own is always returned to ZLE.
+  local report=$'\e\\[0n\e\\[([1-9][0-9]{0,3});([1-9][0-9]{0,3})R'
+  while (( (remaining = deadline - EPOCHREALTIME) > 0 )) &&
+        sysread -i $_figfig_zed_fd -s 256 -t "$remaining" chunk 2>/dev/null; do
+    bytes+=$chunk
+    if [[ $bytes =~ $report ]]; then
+      _figfig_zed_cursor="$match[1];$match[2]"
+      bytes="${bytes:0:$(( MBEGIN - 1 ))}${bytes:$MEND}"
+      break
+    fi
+  done
+  # Preserve input that arrived during the query, including split replies.
+  if [[ -z $_figfig_zed_cursor && -n $1 ]]; then
+    bytes=${bytes#"$1"}
+  fi
+  [[ -z $bytes ]] || zle -U -- "$bytes"
+  [[ -n $_figfig_zed_cursor ]]
+}
+
+_figfig_zed_late_reply() {
+  local _figfig_zed_cursor=''
+  # The status marker was already consumed by ZLE. If the terminal missed the
+  # deadline, discard its report without changing the command or its popup.
+  _figfig_zed_read_cursor $'\e[0n' || return 0
+}
+
+_figfig_zed_query_cursor() {
+  _figfig_zed_cursor=''
+  (( _figfig_zed_fd >= 0 && _figfig_write_fd >= 0 && EPOCHREALTIME >= _figfig_zed_retry )) || return 0
+  zle -R
+  print -rn -- $'\e[5n\e[6n' >/dev/tty 2>/dev/null || return 0
+  _figfig_zed_read_cursor '' || _figfig_zed_retry=$(( EPOCHREALTIME + 1 ))
 }
 
 _figfig_disconnect() {
@@ -102,13 +148,16 @@ _figfig_history() {
 _figfig_redraw() {
   _figfig_history
   if [[ $BUFFER != $_figfig_last_buffer || $CURSOR != $_figfig_last_cursor ]]; then
+    _figfig_visible=0
+    # Let ZLE finish processing a burst of keys before asking for geometry.
+    (( _figfig_zed_fd >= 0 && (PENDING || KEYS_QUEUED_COUNT) )) && return 0
     _figfig_last_buffer=$BUFFER
     _figfig_last_cursor=$CURSOR
-    _figfig_visible=0
     if [[ $BUFFER != $_figfig_suppressed ]]; then
       _figfig_suppressed=''
       (( ++_figfig_revision ))
       if [[ -n $BUFFER && $KEYMAP != vicmd ]]; then
+        _figfig_zed_query_cursor
         _figfig_send complete
       else
         _figfig_send hide
@@ -210,6 +259,14 @@ for _figfig_map in emacs viins; do
   _figfig_bind $_figfig_map '^[' escape send-break
 done
 unset _figfig_map
+if [[ $OSTYPE == darwin* && ${TERM_PROGRAM-} == zed ]] &&
+   sysopen -r -o cloexec -u _figfig_zed_fd /dev/tty 2>/dev/null; then
+  zle -N _figfig_zed_late_reply
+  for _figfig_map in emacs viins vicmd; do
+    bindkey -M $_figfig_map $'\e[0n' _figfig_zed_late_reply
+  done
+  unset _figfig_map
+fi
 add-zle-hook-widget line-init _figfig_line_init
 add-zle-hook-widget line-pre-redraw _figfig_redraw
 add-zle-hook-widget line-finish _figfig_line_finish

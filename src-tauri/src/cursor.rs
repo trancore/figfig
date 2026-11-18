@@ -100,6 +100,7 @@ mod tests {
                     cursor: 6,
                     cwd: "/".into(),
                     terminal_pid: 42,
+                    terminal_size: None,
                 },
                 CompletionResponse::default(),
             ),

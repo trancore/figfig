@@ -14,6 +14,26 @@ pub struct CompletionRequest {
     pub cwd: String,
     #[serde(default)]
     pub terminal_pid: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub terminal_size: Option<TerminalSize>,
+}
+
+/// Dimensions of the shell's text grid, excluding tabs, docks, and window chrome.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TerminalSize {
+    pub width: u16,
+    pub height: u16,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<TerminalCell>,
+}
+
+/// A one-based cursor position in the terminal's visible grid.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TerminalCell {
+    pub row: u16,
+    pub column: u16,
+    pub rows: u16,
+    pub columns: u16,
 }
 
 /// Geometry only, reported by the optional macOS cursor input method.
@@ -209,6 +229,7 @@ mod tests {
             cursor: 3,
             cwd: "/".into(),
             terminal_pid: 0,
+            terminal_size: None,
         };
         assert!(state.begin(&request));
         assert!(!state.begin(&request));

@@ -142,6 +142,7 @@ fn complete(args: &[String]) -> Result<()> {
         cursor: buffer.chars().count(),
         cwd: cwd.to_string_lossy().into(),
         terminal_pid: 0,
+        terminal_size: None,
     };
     let response = Engine::new().complete(&request, 12);
     println!("{}", serde_json::to_string_pretty(&response)?);

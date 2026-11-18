@@ -112,7 +112,8 @@ fn find_terminal_pid() -> i32 {
         return value.parse().unwrap_or(0);
     }
     let mut pid = unsafe { getppid() };
-    for _ in 0..12 {
+    // IDEs add PTY hosts, launchers, and shell-integration wrappers.
+    for _ in 0..64 {
         let Ok(output) = Command::new("/bin/ps")
             .args(["-p", &pid.to_string(), "-o", "ppid=", "-o", "comm="])
             .output()

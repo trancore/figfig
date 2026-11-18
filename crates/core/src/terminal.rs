@@ -1,18 +1,64 @@
-/// Identify the executable that owns a local terminal session.
+//! Shared host profiles. The native cursor helper embeds this same registry.
+use serde::Deserialize;
+use std::sync::LazyLock;
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum CursorBackend {
+    Accessibility,
+    InputMethod,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalHost {
+    pub name: String,
+    pub bundle: String,
+    pub executable: String,
+    pub bundle_id: String,
+    pub backend: CursorBackend,
+    pub family: String,
+}
+
+pub fn hosts() -> &'static [TerminalHost] {
+    static HOSTS: LazyLock<Vec<TerminalHost>> = LazyLock::new(|| {
+        serde_json::from_str(include_str!("../../../assets/terminal-hosts.json"))
+            .expect("valid bundled terminal host registry")
+    });
+    &HOSTS
+}
+
+pub fn host_for_executable(executable: &str) -> Option<&'static TerminalHost> {
+    hosts().iter().find(|host| {
+        executable.ends_with(&format!(
+            "/{}/Contents/MacOS/{}",
+            host.bundle, host.executable
+        ))
+    })
+}
+
+pub fn host_for_bundle(identifier: &str) -> Option<&'static TerminalHost> {
+    hosts().iter().find(|host| host.bundle_id == identifier)
+}
+
+pub fn host_for_name(name: &str) -> Option<&'static TerminalHost> {
+    hosts().iter().find(|host| host.name == name)
+}
+
+/// Identify the main executable, never an editor's CLI or PTY helper.
 pub fn terminal_name(executable: &str) -> Option<&'static str> {
-    if executable.ends_with("/Terminal.app/Contents/MacOS/Terminal") {
-        Some("Terminal.app")
-    } else if executable.ends_with("/iTerm.app/Contents/MacOS/iTerm2")
-        || executable.ends_with("/iTerm2.app/Contents/MacOS/iTerm2")
-    {
-        Some("iTerm2")
-    } else if ["Zed.app", "Zed Preview.app", "Zed Nightly.app"]
-        .iter()
-        .any(|bundle| executable.ends_with(&format!("/{bundle}/Contents/MacOS/zed")))
-    {
-        Some("Zed")
+    host_for_executable(executable).map(|host| host.name.as_str())
+}
+
+pub fn uses_cursor_tracker(name: &str) -> bool {
+    host_for_name(name).is_some_and(|host| host.backend == CursorBackend::InputMethod)
+}
+
+pub fn tracker_hint(name: &str) -> &'static str {
+    if host_for_name(name).is_some_and(|host| host.family == "jetbrains") {
+        "JetBrains cursor tracking is unavailable. Install the figfig Terminal plugin (see the installation guide), restart the IDE, and use a local zsh terminal."
     } else {
-        None
+        "Integrated-terminal cursor tracking is unavailable. Run `figfig setup terminal`, allow figfig Cursor Tracking, and restart your editor. VSCode and Cursor also require `figfig permissions` for terminal focus detection."
     }
 }
 
@@ -21,18 +67,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn recognizes_terminal_hosts_and_zed_channels() {
-        for (path, name) in [
-            (
-                "/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal",
-                "Terminal.app",
-            ),
-            ("/Applications/iTerm.app/Contents/MacOS/iTerm2", "iTerm2"),
-            ("/Applications/Zed.app/Contents/MacOS/zed", "Zed"),
-            ("/Applications/Zed Preview.app/Contents/MacOS/zed", "Zed"),
-            ("/Applications/Zed Nightly.app/Contents/MacOS/zed", "Zed"),
-        ] {
-            assert_eq!(terminal_name(path), Some(name));
+    fn registry_identifies_every_main_process_in_any_install_directory() {
+        for host in hosts() {
+            for directory in [
+                "/Applications",
+                "/Users/test/Library/Application Support/JetBrains/Toolbox/apps/2026.3",
+            ] {
+                let path = format!(
+                    "{directory}/{}/Contents/MacOS/{}",
+                    host.bundle, host.executable
+                );
+                assert_eq!(terminal_name(&path), Some(host.name.as_str()));
+                assert_eq!(host_for_bundle(&host.bundle_id).unwrap().name, host.name);
+            }
+            assert!(!host.family.is_empty() || host.backend == CursorBackend::Accessibility);
         }
     }
 
@@ -42,9 +90,15 @@ mod tests {
             "/Applications/Zed.app/Contents/MacOS/cli",
             "/Applications/Zed.app/Contents/MacOS/zed-helper",
             "/tmp/OtherZed.app/Contents/MacOS/zed",
+            "/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper",
+            "/Applications/IntelliJ IDEA.app/Contents/lib/pty4j/darwin/pty4j-unix-spawn-helper",
             "/bin/zsh",
         ] {
             assert_eq!(terminal_name(path), None);
         }
+        assert!(host_for_bundle("com.microsoft.VSCode.helper").is_none());
+        assert!(!uses_cursor_tracker("Terminal.app"));
+        assert!(uses_cursor_tracker("VSCode"));
+        assert!(uses_cursor_tracker("IntelliJ IDEA"));
     }
 }

@@ -23,10 +23,21 @@ pub struct CursorPosition {
     pub request_id: String,
     pub terminal_pid: i32,
     pub x: f64,
-    /// AppKit screen coordinates, with a bottom-left origin.
+    /// Screen points; AppKit uses a bottom-left origin, Accessibility a top-left origin.
     pub y: f64,
     pub height: f64,
     pub focus: u64,
+    /// Existing InputMethodKit reports use AppKit; IDE adapters can use AX points.
+    #[serde(default)]
+    pub coordinate_system: CoordinateSystem,
+}
+
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum CoordinateSystem {
+    #[default]
+    AppKit,
+    Accessibility,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -175,6 +186,18 @@ impl SessionState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn legacy_cursor_frames_default_to_appkit_coordinates() {
+        let position: CursorPosition = serde_json::from_str(
+            r#"{
+            "requestId":"old-helper", "terminalPid":42, "x":100,
+            "y":200, "height":20, "focus":1
+        }"#,
+        )
+        .unwrap();
+        assert_eq!(position.coordinate_system, CoordinateSystem::AppKit);
+    }
 
     #[test]
     fn late_results_cannot_reopen_dismissed_popup() {

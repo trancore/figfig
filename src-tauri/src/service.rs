@@ -1,5 +1,5 @@
 use crate::{
-    cursor::{CursorAction, CursorQuery, SETUP_HINT},
+    cursor::{CursorAction, CursorQuery},
     native,
 };
 use anyhow::Result;
@@ -31,6 +31,7 @@ struct Inner {
     error: Option<String>,
     cursor_query: Option<CursorQuery>,
     cursor_sequence: u64,
+    terminal_pid: i32,
 }
 
 pub struct Service {
@@ -53,6 +54,7 @@ impl Service {
                 error: None,
                 cursor_query: None,
                 cursor_sequence: 0,
+                terminal_pid: 0,
             }),
             events,
             engine: Arc::new(Engine::new()),
@@ -71,6 +73,8 @@ impl Service {
                 return;
             }
             inner.cursor_query = None;
+            inner.terminal_pid = request.terminal_pid;
+            inner.error = None;
         }
         let service = self.clone();
         let app = app.clone();
@@ -133,9 +137,15 @@ impl Service {
     }
 
     pub fn status(&self) -> ServerMessage {
-        let foreground = native::terminal_name(native::frontmost_pid());
-        let caret = native::caret(0);
+        let pid = native::frontmost_pid();
+        let foreground = native::terminal_name(pid);
+        let caret = native::caret(pid);
         let inner = self.inner.lock().unwrap();
+        let current_error = if inner.terminal_pid == pid {
+            inner.error.clone()
+        } else {
+            None
+        };
         ServerMessage::Status {
             version: PROTOCOL_VERSION,
             paused: inner.paused,
@@ -146,10 +156,17 @@ impl Service {
                     .ok()
                     .and_then(|caret| native::terminal_name(caret.pid))
             }),
-            error: if foreground.as_deref() == Some("Zed") {
-                inner.error.clone()
+            error: if foreground
+                .as_deref()
+                .is_some_and(figfig_core::terminal::uses_cursor_tracker)
+            {
+                if native::is_electron(pid) && caret.is_ok() {
+                    None
+                } else {
+                    native::tracker_ready(pid).err().or(current_error)
+                }
             } else {
-                caret.err().or_else(|| inner.error.clone())
+                caret.err().or(current_error)
             },
         }
     }
@@ -214,7 +231,14 @@ impl Service {
         }
         let enabled =
             inner.settings.popup_enabled && !inner.paused && !response.candidates.is_empty();
-        if enabled && native::terminal_name(request.terminal_pid).as_deref() == Some("Zed") {
+        if enabled && native::is_electron(request.terminal_pid) {
+            if let Ok(caret) = native::caret(request.terminal_pid) {
+                drop(inner);
+                self.present_at(app, request, response, Some(Ok(caret)));
+                return;
+            }
+        }
+        if enabled && native::uses_cursor_tracker(request.terminal_pid) {
             if native::frontmost_pid() != request.terminal_pid {
                 drop(inner);
                 self.present_at(
@@ -236,7 +260,7 @@ impl Service {
                 CursorAction::Complete(request.clone(), response),
             );
             drop(inner);
-            if let Err(error) = native::request_zed_caret(&id, request.terminal_pid) {
+            if let Err(error) = native::request_tracker_caret(&id, request.terminal_pid) {
                 self.cursor_failed(app, error);
             }
             return;
@@ -285,7 +309,7 @@ impl Service {
             inner.cursor_query.take().unwrap()
         };
         let caret = if native::frontmost_pid() == position.terminal_pid {
-            native::zed_caret(&position)
+            native::tracker_caret(&position)
         } else {
             Err("The shell's terminal is not focused".into())
         };
@@ -375,9 +399,10 @@ impl Service {
             let inner = self.inner.lock().unwrap();
             if let Some(query) = &inner.cursor_query {
                 let expired = query.expired(Instant::now());
+                let terminal = native::terminal_name(query.terminal_pid).unwrap_or_default();
                 drop(inner);
                 if expired {
-                    self.cursor_failed(app, SETUP_HINT.into());
+                    self.cursor_failed(app, figfig_core::terminal::tracker_hint(&terminal).into());
                 }
                 return;
             }
@@ -392,7 +417,7 @@ impl Service {
         let Some(old) = old else {
             return;
         };
-        if native::terminal_name(old.pid).as_deref() == Some("Zed") {
+        if old.tracker {
             if native::frontmost_pid() != old.pid {
                 self.hide(app);
                 return;
@@ -413,7 +438,7 @@ impl Service {
                 },
             );
             drop(inner);
-            if let Err(error) = native::request_zed_caret(&id, old.pid) {
+            if let Err(error) = native::request_tracker_caret(&id, old.pid) {
                 self.cursor_failed(app, error);
             }
             return;

@@ -3,8 +3,6 @@ use figfig_core::{CompletionRequest, CompletionResponse, CursorPosition};
 use std::time::{Duration, Instant};
 
 pub const CURSOR_TIMEOUT: Duration = Duration::from_millis(500);
-pub const SETUP_HINT: &str = "Zed cursor tracking is unavailable. Run `figfig setup zed`, allow figfig Cursor Tracking, and restart Zed.";
-
 pub enum CursorAction {
     Complete(CompletionRequest, CompletionResponse),
     Track {
@@ -63,6 +61,7 @@ mod tests {
             y: 200.0,
             height: 20.0,
             focus: 1,
+            coordinate_system: Default::default(),
         };
         assert!(query.matches(&position, now));
         assert!(!query.matches(&position, now + CURSOR_TIMEOUT));

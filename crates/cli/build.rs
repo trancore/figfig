@@ -3,6 +3,7 @@ use std::{env, path::PathBuf, process::Command};
 fn main() {
     println!("cargo:rerun-if-changed=../../macos/cursor/main.m");
     println!("cargo:rerun-if-changed=../../macos/cursor/Info.plist");
+    println!("cargo:rerun-if-changed=../../assets/terminal-hosts.json");
     if env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("macos") {
         return;
     }
@@ -13,8 +14,12 @@ fn main() {
     };
     let output = PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("figfig-cursor");
     let status = Command::new("xcrun")
+        .arg("clang")
+        .arg(format!(
+            "-DFIGFIG_HOSTS_JSON={:?}",
+            std::fs::read_to_string("../../assets/terminal-hosts.json").unwrap()
+        ))
         .args([
-            "clang",
             "-fobjc-arc",
             "-O2",
             "-Wall",
@@ -29,6 +34,8 @@ fn main() {
             "Carbon",
             "-framework",
             "InputMethodKit",
+            "-framework",
+            "ApplicationServices",
             "../../macos/cursor/main.m",
             "-o",
         ])

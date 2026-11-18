@@ -8,9 +8,10 @@ pub struct Caret {
     pub height: f64,
     pub pid: i32,
     pub focus: usize,
+    pub tracker: bool,
 }
 
-fn convert_zed_caret(
+fn convert_tracker_caret(
     position: &figfig_core::CursorPosition,
     screen_height: f64,
 ) -> Result<Caret, String> {
@@ -21,11 +22,16 @@ fn convert_zed_caret(
         || !(1.0..=200.0).contains(&position.height)
         || !screen_height.is_finite()
     {
-        return Err("Zed did not expose a valid insertion point".into());
+        return Err("The terminal did not expose a valid insertion point".into());
     }
-    let y = screen_height - position.y - position.height;
+    let y = match position.coordinate_system {
+        figfig_core::protocol::CoordinateSystem::AppKit => {
+            screen_height - position.y - position.height
+        }
+        figfig_core::protocol::CoordinateSystem::Accessibility => position.y,
+    };
     if !y.is_finite() {
-        return Err("Zed returned invalid cursor coordinates".into());
+        return Err("The terminal returned invalid cursor coordinates".into());
     }
     Ok(Caret {
         x: position.x,
@@ -36,6 +42,7 @@ fn convert_zed_caret(
             .focus
             .try_into()
             .map_err(|_| "Invalid cursor focus identifier")?,
+        tracker: true,
     })
 }
 
@@ -102,6 +109,8 @@ mod mac {
         fn CFArrayGetCount(array: Ref) -> isize;
         fn CFArrayGetValueAtIndex(array: Ref, index: isize) -> Ref;
         fn CFBooleanGetValue(value: Ref) -> bool;
+        fn CFGetTypeID(value: Ref) -> usize;
+        fn CFArrayGetTypeID() -> usize;
         fn CFNotificationCenterGetDistributedCenter() -> Ref;
         fn CFNotificationCenterPostNotification(
             center: Ref,
@@ -187,13 +196,51 @@ mod mac {
         figfig_core::terminal::terminal_name(name.trim_end_matches('\0')).map(str::to_owned)
     }
 
+    pub fn uses_cursor_tracker(pid: i32) -> bool {
+        terminal_name(pid)
+            .as_deref()
+            .is_some_and(figfig_core::terminal::uses_cursor_tracker)
+    }
+
+    pub fn is_electron(pid: i32) -> bool {
+        terminal_name(pid)
+            .as_deref()
+            .and_then(figfig_core::terminal::host_for_name)
+            .is_some_and(|host| host.family == "electron")
+    }
+
     pub fn frontmost_pid() -> i32 {
         NSWorkspace::sharedWorkspace()
             .frontmostApplication()
             .map_or(0, |app| app.processIdentifier())
     }
 
-    pub fn request_zed_caret(request_id: &str, terminal_pid: i32) -> Result<(), String> {
+    pub fn tracker_ready(pid: i32) -> Result<(), String> {
+        let terminal = terminal_name(pid).ok_or("Focus a supported integrated terminal")?;
+        let host = figfig_core::terminal::host_for_name(&terminal).unwrap();
+        if host.family == "electron" && !trusted() {
+            return Err(
+                "Run `figfig permissions` to enable integrated-terminal focus detection.".into(),
+            );
+        }
+        let key = unsafe { CFString::wrap_under_get_rule(kTISPropertyBundleID as _) };
+        let filter = CFDictionary::from_CFType_pairs(&[(key, CFString::new("dev.figfig.cursor"))]);
+        let sources = Owned::new(unsafe {
+            TISCreateInputSourceList(filter.as_concrete_TypeRef() as Ref, true)
+        })?;
+        for index in 0..unsafe { CFArrayGetCount(sources.0) } {
+            let source = unsafe { CFArrayGetValueAtIndex(sources.0, index) };
+            let state =
+                unsafe { TISGetInputSourceProperty(source, kTISPropertyInputSourceIsSelected) };
+            if !state.is_null() && unsafe { CFBooleanGetValue(state) } {
+                return Ok(());
+            }
+        }
+        Err(figfig_core::terminal::tracker_hint(&terminal).into())
+    }
+
+    pub fn request_tracker_caret(request_id: &str, terminal_pid: i32) -> Result<(), String> {
+        tracker_ready(terminal_pid)?;
         let path = figfig_core::runtime::socket_path().map_err(|e| e.to_string())?;
         let name = CFString::new("dev.figfig.cursor.request");
         let keys = [
@@ -246,7 +293,7 @@ mod mac {
         })?;
         let count = unsafe { CFArrayGetCount(sources.0) };
         if count == 0 && enabled {
-            return Err("macOS has not registered cursor tracking yet. Log out and back in, then run `figfig setup zed` again.".into());
+            return Err("macOS has not registered cursor tracking yet. Log out and back in, then run `figfig setup terminal` again.".into());
         }
         for index in 0..count {
             let source = unsafe { CFArrayGetValueAtIndex(sources.0, index) };
@@ -267,13 +314,13 @@ mod mac {
                 let state =
                     unsafe { TISGetInputSourceProperty(source, kTISPropertyInputSourceIsEnabled) };
                 if state.is_null() || !unsafe { CFBooleanGetValue(state) } {
-                    return Err("Allow figfig to enable Cursor Tracking in the macOS prompt, then retry `figfig setup zed`. If no prompt appears, log out and back in first.".into());
+                    return Err("Allow figfig to enable Cursor Tracking in the macOS prompt, then retry `figfig setup terminal`. If no prompt appears, log out and back in first.".into());
                 }
                 let result = unsafe { TISSelectInputSource(source) };
                 let state =
                     unsafe { TISGetInputSourceProperty(source, kTISPropertyInputSourceIsSelected) };
                 if result != 0 || state.is_null() || !unsafe { CFBooleanGetValue(state) } {
-                    return Err(format!("macOS could not activate cursor tracking (OSStatus {result}). Log out and back in, then retry `figfig setup zed`."));
+                    return Err(format!("macOS could not activate cursor tracking (OSStatus {result}). Log out and back in, then retry `figfig setup terminal`."));
                 }
             } else {
                 unsafe {
@@ -302,7 +349,7 @@ mod mac {
         Ok(())
     }
 
-    pub fn zed_caret(position: &figfig_core::CursorPosition) -> Result<Caret, String> {
+    pub fn tracker_caret(position: &figfig_core::CursorPosition) -> Result<Caret, String> {
         let mtm = MainThreadMarker::new().ok_or("Cursor positioning requires the main thread")?;
         let height = NSScreen::screens(mtm)
             .firstObject()
@@ -310,7 +357,7 @@ mod mac {
             .frame()
             .size
             .height;
-        super::convert_zed_caret(position, height)
+        super::convert_tracker_caret(position, height)
     }
 
     pub fn caret(expected_pid: i32) -> Result<Caret, String> {
@@ -330,9 +377,25 @@ mod mac {
             return Err("The shell's terminal is not focused".into());
         }
         if terminal_name(pid).is_none() {
-            return Err("Focus Terminal.app, iTerm2, or Zed".into());
+            return Err("Focus a supported terminal or editor integrated terminal".into());
         }
         let element = app.attr("AXFocusedUIElement")?;
+        if is_electron(pid) {
+            let classes = element.attr("AXDOMClassList")?;
+            let terminal_class = CFString::new("xterm-helper-textarea");
+            if unsafe { CFGetTypeID(classes.0) != CFArrayGetTypeID() }
+                || !(0..unsafe { CFArrayGetCount(classes.0) }).any(|index| unsafe {
+                    CFEqual(
+                        CFArrayGetValueAtIndex(classes.0, index),
+                        terminal_class.as_concrete_TypeRef() as Ref,
+                    )
+                })
+            {
+                return Err(
+                    "Focus the integrated terminal input, not the editor or search field".into(),
+                );
+            }
+        }
         let range_value = element.attr("AXSelectedTextRange")?;
         let mut range = Range::default();
         if !unsafe { AXValueGetValue(range_value.0, 4, &mut range as *mut _ as *mut c_void) }
@@ -359,16 +422,29 @@ mod mac {
             unsafe { AXValueGetValue(bounds.0, 3, rect as *mut _ as *mut c_void) }
         };
         if !get_rect(range_value.0, &mut rect) || rect.size.height <= 0.0 {
-            if range.location <= 0 {
+            if is_electron(pid) {
+                // xterm positions its hidden IME textarea at the cursor. Its
+                // element bounds remain useful when AXBoundsForRange is absent.
+                let position = element.attr("AXPosition")?;
+                let size = element.attr("AXSize")?;
+                if !unsafe {
+                    AXValueGetValue(position.0, 1, &mut rect.origin as *mut _ as *mut c_void)
+                } || !unsafe {
+                    AXValueGetValue(size.0, 2, &mut rect.size as *mut _ as *mut c_void)
+                } {
+                    return Err("Terminal does not expose caret bounds".into());
+                }
+            } else if range.location <= 0 {
                 return Err("Terminal does not expose caret bounds".into());
+            } else {
+                range.location -= 1;
+                range.length = 1;
+                let previous = Owned::new(unsafe { AXValueCreate(4, &range as *const _ as Ref) })?;
+                if !get_rect(previous.0, &mut rect) {
+                    return Err("Terminal does not expose caret bounds".into());
+                }
+                rect.origin.x += rect.size.width;
             }
-            range.location -= 1;
-            range.length = 1;
-            let previous = Owned::new(unsafe { AXValueCreate(4, &range as *const _ as Ref) })?;
-            if !get_rect(previous.0, &mut rect) {
-                return Err("Terminal does not expose caret bounds".into());
-            }
-            rect.origin.x += rect.size.width;
         }
         if !rect.origin.x.is_finite()
             || !rect.origin.y.is_finite()
@@ -382,6 +458,7 @@ mod mac {
             height: rect.size.height,
             pid,
             focus: unsafe { CFHash(element.0) },
+            tracker: false,
         })
     }
 
@@ -446,6 +523,21 @@ pub fn request_permission() -> bool {
 pub fn terminal_name(_: i32) -> Option<String> {
     None
 }
+
+#[cfg(not(target_os = "macos"))]
+pub fn uses_cursor_tracker(_: i32) -> bool {
+    false
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn is_electron(_: i32) -> bool {
+    false
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn tracker_ready(_: i32) -> Result<(), String> {
+    Err("Only macOS is supported".into())
+}
 #[cfg(not(target_os = "macos"))]
 pub fn frontmost_pid() -> i32 {
     0
@@ -455,11 +547,11 @@ pub fn setup_cursor(_: &str, _: bool) -> Result<(), String> {
     Err("Only macOS is supported".into())
 }
 #[cfg(not(target_os = "macos"))]
-pub fn request_zed_caret(_: &str, _: i32) -> Result<(), String> {
+pub fn request_tracker_caret(_: &str, _: i32) -> Result<(), String> {
     Err("Only macOS is supported".into())
 }
 #[cfg(not(target_os = "macos"))]
-pub fn zed_caret(_: &figfig_core::CursorPosition) -> Result<Caret, String> {
+pub fn tracker_caret(_: &figfig_core::CursorPosition) -> Result<Caret, String> {
     Err("Only macOS is supported".into())
 }
 #[cfg(not(target_os = "macos"))]
@@ -483,12 +575,13 @@ mod tests {
             y: 800.0,
             height: 20.0,
             focus: 1,
+            coordinate_system: Default::default(),
         }
     }
 
     #[test]
     fn input_method_rect_uses_the_top_of_the_line_in_accessibility_coordinates() {
-        let caret = convert_zed_caret(&position(), 1080.0).unwrap();
+        let caret = convert_tracker_caret(&position(), 1080.0).unwrap();
         assert_eq!(
             caret,
             Caret {
@@ -496,13 +589,14 @@ mod tests {
                 y: 260.0,
                 height: 20.0,
                 pid: 42,
-                focus: 1
+                focus: 1,
+                tracker: true,
             }
         );
         let mut secondary = position();
         secondary.x = -1500.0;
         secondary.y = -400.0;
-        let caret = convert_zed_caret(&secondary, 1080.0).unwrap();
+        let caret = convert_tracker_caret(&secondary, 1080.0).unwrap();
         assert_eq!((caret.x, caret.y), (-1500.0, 1460.0));
     }
 
@@ -511,13 +605,24 @@ mod tests {
         for height in [0.0, -1.0, 201.0, f64::NAN, f64::INFINITY] {
             let mut value = position();
             value.height = height;
-            assert!(convert_zed_caret(&value, 1080.0).is_err());
+            assert!(convert_tracker_caret(&value, 1080.0).is_err());
         }
         let mut value = position();
         value.x = f64::NAN;
-        assert!(convert_zed_caret(&value, 1080.0).is_err());
+        assert!(convert_tracker_caret(&value, 1080.0).is_err());
         value = position();
         value.y = f64::INFINITY;
-        assert!(convert_zed_caret(&value, 1080.0).is_err());
+        assert!(convert_tracker_caret(&value, 1080.0).is_err());
+    }
+
+    #[test]
+    fn adapter_coordinates_are_already_top_left_screen_points() {
+        let mut value = position();
+        value.coordinate_system = figfig_core::CoordinateSystem::Accessibility;
+        value.x = -1500.0;
+        value.y = -200.0;
+        let caret = convert_tracker_caret(&value, 1080.0).unwrap();
+        assert_eq!((caret.x, caret.y, caret.height), (-1500.0, -200.0, 20.0));
+        assert!(caret.tracker);
     }
 }

@@ -1,19 +1,19 @@
 ---
 title: Releasing source builds
-description: Prepare a tagged source release, verify Homebrew installation, and update the tap manually.
+description: Prepare a tagged source release, verify Homebrew installation, and publish the formula automatically.
 ---
 
-The source repository is `trancore/figfig`; the tap repository is `trancore/homebrew-tap`, addressed as `trancore/tap` in Homebrew commands. The release workflow creates a source archive, checksum, and formula, then attaches them to a GitHub Draft Release. After reviewing and publishing the release, maintainers update the tap manually. There is no automatic cross-repository push or pull request.
+The source repository is `trancore/figfig`. Homebrew commands use `trancore/tap` for the `trancore/homebrew-tap` repository. The release workflow creates a source archive, checksum, and formula, then attaches them to a GitHub Draft Release. After publication, `Update Homebrew tap` verifies the public assets and updates the formula on the tap's `main` branch.
 
 ## Publication flow {#公開までの流れ}
 
 The first publication is being prepared. See the [verification record](verification.md#2026-11-18のhomebrew公開準備の確認結果) for local validation results.
 
-1. Publish the tap repository.
+1. Publish the tap repository and configure its Actions secret in the source repository.
 2. Tag the intended source commit and generate a Draft Release.
 3. Install the draft's source through a disposable tap and verify it.
-4. Publish the release and verify the source checksum through its public URL.
-5. Copy the release formula into the tap, then check both CPU CI jobs and the official installation command.
+4. Publish the release as Latest and confirm that `Update Homebrew tap` succeeds.
+5. Check both tap CI jobs and the official installation command.
 
 Unless noted otherwise, run the following commands from the **figfig source root**. Keep `homebrew-tap` in the adjacent directory, and replace `v0.1.0` with the version being released.
 
@@ -34,6 +34,12 @@ The local `homebrew-tap` directory is an independent Git repository with publish
 
 After the parenthesized commands finish, your shell remains at the source root. The initial push sends the working branch HEAD to the public `main` branch. Skip `gh repo create` if the GitHub repository already exists. Before a formula is added, tap CI reports that the release is pending and skips installation checks.
 
+### Set up authentication for tap updates
+
+Use an account that can push to `main` in `trancore/homebrew-tap`. Create a fine-grained personal access token scoped to `trancore/homebrew-tap` with the `Contents` repository permission set to `Read and write`. [GitHub's token setup guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+
+In `trancore/figfig`, open **Settings → Secrets and variables → Actions** and save the token as a repository secret named `HOMEBREW_TAP_TOKEN`. Use the same secret name when rotating the token. [GitHub's Actions secret setup guide](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
+
 ## Create a Draft Release from a tag {#タグからdraft-releaseを作成する}
 
 1. Align versions in `package.json`, workspace `Cargo.toml`, and `src-tauri/tauri.conf.json`, and update `Cargo.lock`. The first version is `0.1.0`.
@@ -51,7 +57,7 @@ git push origin v0.1.0
 | --- | --- |
 | `figfig-0.1.0-source.tar.gz` | Source from the tagged commit; no compiled binaries |
 | `SHA256SUMS` | SHA-256 of the source archive |
-| `figfig.rb` | Formula referencing the public release URL and checksum; copy to `Formula/figfig.rb` in the tap |
+| `figfig.rb` | Formula with the public release URL and checksum, published to `Formula/figfig.rb` in the tap |
 | `release-notes.md` | Source commit and installation steps; stored in the Actions artifact and used as the draft body |
 
 To run the workflow manually for an existing tag:
@@ -111,36 +117,22 @@ brew untap trancore/figfig-validation
 
 ## Publish the release and update the tap {#release公開とtap更新}
 
-1. Review the draft assets and verification results, then publish the release on GitHub.
-2. Download the source from its public URL and verify its checksum again. This URL is unavailable while the release is a draft.
-
-```sh
-curl --fail --location \
-  https://github.com/trancore/figfig/releases/download/v0.1.0/figfig-0.1.0-source.tar.gz \
-  --output "$release_dir/figfig-0.1.0-source.tar.gz"
-(cd "$release_dir" && shasum -a 256 -c SHA256SUMS)
-mkdir -p ../homebrew-tap/Formula
-cp "$release_dir/figfig.rb" ../homebrew-tap/Formula/figfig.rb
-```
-
-3. Commit and push the formula update:
-
-```sh
-git -C ../homebrew-tap switch main
-git -C ../homebrew-tap diff -- Formula/figfig.rb
-git -C ../homebrew-tap add Formula/figfig.rb
-git -C ../homebrew-tap commit -m "chore: publish figfig 0.1.0 formula"
-git -C ../homebrew-tap push origin main
-```
-
-4. Check that tap CI passes syntax, style, metadata, source installation, formula tests, and removal on Apple Silicon and Intel.
-5. On a test Mac, verify the official installation command, upgrades to a later version, and removal. Record unavailable checks in [Verification](verification.md).
+1. Review the draft assets and verification results, then publish the release as Latest on GitHub.
+2. `Update Homebrew tap` downloads the source archive and attachments from their public URLs. It verifies the archive against `SHA256SUMS`, checks the formula's URL, SHA-256 and Ruby syntax, then pushes the formula to the tap's `main` branch.
+3. Check that tap CI passes syntax, style, metadata, source installation, formula tests, and removal on Apple Silicon and Intel.
+4. On a test Mac, verify the official installation command, upgrades to a later version, and removal. Record unavailable checks in [Verification](verification.md).
 
 ```sh
 brew install trancore/tap/figfig
 brew test trancore/tap/figfig
 figfig setup
 figfig permissions
+```
+
+To recover from a failed update or sync an already published release, run `Update Homebrew tap` manually from the source repository's default branch. Both automatic and manual runs sync the stable release GitHub currently marks as Latest. An identical formula needs no new commit.
+
+```sh
+gh workflow run update-homebrew-tap.yml --repo trancore/figfig
 ```
 
 After the first official installation is verified, remove the pending-release notices from the tap README, source README, both installation pages, and translated homepage text. Update both compatibility pages and verification records with the actual results.

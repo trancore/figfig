@@ -1,14 +1,65 @@
-//! macOS integration reads caret geometry, never terminal contents or keystrokes.
-use serde::Serialize;
+//! macOS integration reads window and caret geometry, never terminal contents or keystrokes.
 
-#[derive(Debug, Clone, Copy, Serialize, PartialEq)]
+use figfig_core::protocol::TerminalSize;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PositionSource {
+    Accessibility,
+    Tracker,
+    // Mouse events let us dismiss if the terminal loses focus or scrolls.
+    ZedWindow {
+        mouse_events: [u32; 4],
+        terminal_size: Option<TerminalSize>,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Caret {
     pub x: f64,
     pub y: f64,
     pub height: f64,
     pub pid: i32,
     pub focus: usize,
-    pub tracker: bool,
+    pub source: PositionSource,
+}
+
+#[cfg(any(target_os = "macos", test))]
+fn zed_terminal_offset(
+    window_width: f64,
+    window_height: f64,
+    size: TerminalSize,
+) -> Option<(f64, f64, f64)> {
+    const BOTTOM_CHROME: f64 = 32.0;
+    let width = f64::from(size.width);
+    let height = f64::from(size.height);
+    // Only infer the origin for a wide, shallow grid consistent with a bottom
+    // dock. Zed doesn't expose the grid's position or the side docks' widths.
+    if width <= window_width / 2.0
+        || width > window_width
+        || height == 0.0
+        || height + BOTTOM_CHROME > window_height * 2.0 / 3.0
+    {
+        return None;
+    }
+    let cell = size.cursor?;
+    if !(1..=cell.rows).contains(&cell.row) || !(1..=cell.columns).contains(&cell.column) {
+        return None;
+    }
+    let line_height = height / f64::from(cell.rows);
+    let cell_width = width / f64::from(cell.columns);
+    let rows_below = f64::from(cell.rows - cell.row);
+    // Zed truncates the cell height passed to the PTY. It can also leave a
+    // partial row below the grid until the terminal fills. The position of
+    // the last row does not depend on either estimate.
+    let rounding_loss = (rows_below * 0.5).min(line_height / 2.0);
+    let bottom_padding = (rows_below / 4.0).min(1.0) * line_height / 2.0;
+    let line_bottom =
+        window_height - BOTTOM_CHROME - rows_below * line_height - rounding_loss - bottom_padding;
+    Some((
+        (window_width - width) / 2.0 + f64::from(cell.column - 1) * cell_width,
+        line_bottom - line_height,
+        line_height,
+    ))
 }
 
 fn convert_tracker_caret(
@@ -42,18 +93,18 @@ fn convert_tracker_caret(
             .focus
             .try_into()
             .map_err(|_| "Invalid cursor focus identifier")?,
-        tracker: true,
+        source: PositionSource::Tracker,
     })
 }
 
 #[cfg(target_os = "macos")]
 mod mac {
-    use super::Caret;
+    use super::{Caret, PositionSource, TerminalSize};
     use core_foundation::{
         base::TCFType, boolean::CFBoolean, dictionary::CFDictionary, string::CFString, url::CFURL,
     };
     use objc2::MainThreadMarker;
-    use objc2_app_kit::{NSScreen, NSWindow, NSWorkspace};
+    use objc2_app_kit::{NSScreen, NSWindow, NSWindowCollectionBehavior, NSWorkspace};
     use objc2_foundation::NSPoint;
     use std::{ffi::c_void, ptr};
 
@@ -137,6 +188,11 @@ mod mac {
     }
     unsafe extern "C" {
         fn proc_pidpath(pid: i32, buffer: *mut c_void, buffer_size: u32) -> i32;
+    }
+
+    #[link(name = "CoreGraphics", kind = "framework")]
+    unsafe extern "C" {
+        fn CGEventSourceCounterForEventType(state: i32, event_type: u32) -> u32;
     }
 
     struct Owned(Ref);
@@ -411,14 +467,63 @@ mod mac {
         super::convert_tracker_caret(position, height)
     }
 
-    pub fn caret(expected_pid: i32) -> Result<Caret, String> {
+    pub fn zed_window_anchor(
+        pid: i32,
+        terminal_size: Option<TerminalSize>,
+    ) -> Result<Caret, String> {
         if !trusted() {
-            return Err("Accessibility permission is required".into());
+            return Err("Run `figfig permissions` so figfig can position the popup in Zed.".into());
         }
+        if pid <= 0 || frontmost_pid() != pid {
+            return Err("The shell's terminal is not focused".into());
+        }
+
+        let (app, _) = focused_application(pid)?;
+        let window = app.attr("AXFocusedWindow")?;
+        let position = window.attr("AXPosition")?;
+        let size = window.attr("AXSize")?;
+        let mut rect = Rect::default();
+        if !unsafe { AXValueGetValue(position.0, 1, &mut rect.origin as *mut _ as *mut c_void) }
+            || !unsafe { AXValueGetValue(size.0, 2, &mut rect.size as *mut _ as *mut c_void) }
+            || !rect.origin.x.is_finite()
+            || !rect.origin.y.is_finite()
+            || !rect.size.width.is_finite()
+            || !rect.size.height.is_finite()
+            || rect.size.width <= 0.0
+            || rect.size.height <= 0.0
+        {
+            return Err("Zed did not expose valid window bounds".into());
+        }
+
+        const COMBINED_SESSION: i32 = 0;
+        const MOUSE_EVENTS: [u32; 4] = [1, 3, 25, 22]; // Left, right, other, scroll.
+        let mouse_events = MOUSE_EVENTS
+            .map(|event| unsafe { CGEventSourceCounterForEventType(COMBINED_SESSION, event) });
+        let focus = app.attr("AXFocusedUIElement").ok();
+        let grid_offset = terminal_size
+            .and_then(|size| super::zed_terminal_offset(rect.size.width, rect.size.height, size));
+        let (offset_x, offset_y, height) = grid_offset.unwrap_or((
+            rect.size.width / 2.0,
+            rect.size.height - 42.0_f64.min(rect.size.height / 2.0),
+            0.0,
+        ));
+        Ok(Caret {
+            x: rect.origin.x + offset_x,
+            y: rect.origin.y + offset_y,
+            height,
+            pid,
+            focus: unsafe { CFHash(window.0) }
+                ^ focus.map_or(0, |element| unsafe { CFHash(element.0) }.rotate_left(1)),
+            source: PositionSource::ZedWindow {
+                mouse_events,
+                terminal_size: terminal_size.filter(|_| grid_offset.is_some()),
+            },
+        })
+    }
+
+    fn focused_application(expected_pid: i32) -> Result<(Owned, i32), String> {
         let system = Owned::new(unsafe { AXUIElementCreateSystemWide() })?;
-        unsafe {
-            AXUIElementSetMessagingTimeout(system.0, 0.05);
-        }
+        unsafe { AXUIElementSetMessagingTimeout(system.0, 0.05) };
         let app = system.attr("AXFocusedApplication")?;
         let mut pid = 0;
         if unsafe { AXUIElementGetPid(app.0, &mut pid) } != 0 {
@@ -427,6 +532,14 @@ mod mac {
         if expected_pid > 0 && pid != expected_pid {
             return Err("The shell's terminal is not focused".into());
         }
+        Ok((app, pid))
+    }
+
+    pub fn caret(expected_pid: i32) -> Result<Caret, String> {
+        if !trusted() {
+            return Err("Accessibility permission is required".into());
+        }
+        let (app, pid) = focused_application(expected_pid)?;
         if terminal_name(pid).is_none() {
             return Err("Focus a supported terminal or editor integrated terminal".into());
         }
@@ -509,7 +622,7 @@ mod mac {
             height: rect.size.height,
             pid,
             focus: unsafe { CFHash(element.0) },
-            tracker: false,
+            source: PositionSource::Accessibility,
         })
     }
 
@@ -536,13 +649,32 @@ mod mac {
                 break;
             }
         }
-        let x = caret.x.clamp(
+        let anchored_to_window = matches!(
+            caret.source,
+            PositionSource::ZedWindow {
+                terminal_size: None,
+                ..
+            }
+        );
+        let left = if anchored_to_window {
+            caret.x - width / 2.0
+        } else {
+            caret.x
+        };
+        let x = left.clamp(
             available.origin.x,
             (available.origin.x + available.size.width - width).max(available.origin.x),
         );
-        let below = cocoa_y - caret.height - 6.0;
-        let top = if below - height < available.origin.y {
-            cocoa_y + height + 6.0
+        let gap = match caret.source {
+            PositionSource::ZedWindow {
+                terminal_size: Some(_),
+                ..
+            } => 2.0,
+            _ => 6.0,
+        };
+        let below = cocoa_y - caret.height - gap;
+        let top = if anchored_to_window || below - height < available.origin.y {
+            cocoa_y + height + gap
         } else {
             below
         };
@@ -552,6 +684,10 @@ mod mac {
         );
         let ptr = window.ns_window().map_err(|e| e.to_string())?;
         let ns_window = unsafe { &*(ptr as *const NSWindow) };
+        ns_window.setIgnoresMouseEvents(true);
+        ns_window.setCollectionBehavior(
+            ns_window.collectionBehavior() | NSWindowCollectionBehavior::FullScreenAuxiliary,
+        );
         ns_window.setFrameTopLeftPoint(NSPoint::new(x, top));
         // orderFrontRegardless does not make this non-focusable window key.
         ns_window.orderFrontRegardless();
@@ -610,6 +746,10 @@ pub fn caret(_: i32) -> Result<Caret, String> {
     Err("Only macOS is supported".into())
 }
 #[cfg(not(target_os = "macos"))]
+pub fn zed_window_anchor(_: i32, _: Option<TerminalSize>) -> Result<Caret, String> {
+    Err("Only macOS is supported".into())
+}
+#[cfg(not(target_os = "macos"))]
 pub fn place(_: &tauri::WebviewWindow, _: Caret, _: f64, _: f64) -> Result<(), String> {
     Err("Only macOS is supported".into())
 }
@@ -617,6 +757,59 @@ pub fn place(_: &tauri::WebviewWindow, _: Caret, _: f64, _: f64) -> Result<(), S
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wide_zed_bottom_dock_anchors_at_the_reported_cell() {
+        let grid = TerminalSize {
+            width: 1458,
+            height: 342,
+            cursor: Some(figfig_core::protocol::TerminalCell {
+                row: 3,
+                column: 7,
+                rows: 18,
+                columns: 162,
+            }),
+        };
+        let offset = zed_terminal_offset(2560.0, 1440.0, grid);
+        assert_eq!(offset, Some((605.0, 1087.0, 19.0)));
+
+        let mut scrolled = grid;
+        scrolled.cursor.as_mut().unwrap().row = 18;
+        assert_eq!(
+            zed_terminal_offset(2560.0, 1440.0, scrolled),
+            Some((605.0, 1389.0, 19.0))
+        );
+        scrolled.cursor.as_mut().unwrap().row = 19;
+        assert_eq!(zed_terminal_offset(2560.0, 1440.0, scrolled), None);
+    }
+
+    #[test]
+    fn zed_grid_without_bottom_dock_dimensions_uses_window_placement() {
+        for grid in [
+            TerminalSize {
+                width: 500,
+                height: 900,
+                cursor: None,
+            },
+            TerminalSize {
+                width: 2000,
+                height: 1200,
+                cursor: None,
+            },
+            TerminalSize {
+                width: 2000,
+                height: 0,
+                cursor: None,
+            },
+            TerminalSize {
+                width: 3000,
+                height: 300,
+                cursor: None,
+            },
+        ] {
+            assert_eq!(zed_terminal_offset(2560.0, 1440.0, grid), None, "{grid:?}");
+        }
+    }
 
     fn position() -> figfig_core::CursorPosition {
         figfig_core::CursorPosition {
@@ -641,7 +834,7 @@ mod tests {
                 height: 20.0,
                 pid: 42,
                 focus: 1,
-                tracker: true,
+                source: PositionSource::Tracker,
             }
         );
         let mut secondary = position();
@@ -674,6 +867,6 @@ mod tests {
         value.y = -200.0;
         let caret = convert_tracker_caret(&value, 1080.0).unwrap();
         assert_eq!((caret.x, caret.y, caret.height), (-1500.0, -200.0, 20.0));
-        assert!(caret.tracker);
+        assert_eq!(caret.source, PositionSource::Tracker);
     }
 }

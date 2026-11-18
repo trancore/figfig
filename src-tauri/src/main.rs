@@ -8,7 +8,10 @@ use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 fn main() {
     let mut socket_identity = None;
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(target_os = "macos")]
+    let builder = builder.activate_ignoring_other_apps(false);
+    let app = builder
         // This process renders suggestions only. The CLI controls its lifecycle.
         .plugin(tauri_plugin_single_instance::init(|_, _, _| {}))
         .invoke_handler(tauri::generate_handler![service::get_completion])

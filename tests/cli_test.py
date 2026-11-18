@@ -99,6 +99,24 @@ class CliIntegration(unittest.TestCase):
         result = self.call("doctor")
         self.assertIn("figfig Terminal plugin (JetBrains)", result.stdout)
 
+    def test_doctor_fails_when_zed_cursor_tracking_is_disabled(self):
+        self.env.update(
+            FIGFIG_FIXTURE_TERMINAL="Zed",
+            FIGFIG_FIXTURE_POSITION_ERROR="Cursor Tracking is registered but disabled by macOS. Log out of macOS and back in, then run `figfig setup terminal` again.",
+        )
+        self.call("start")
+        result = self.call("doctor", ok=False)
+        self.assertIn("Focused terminal: Zed", result.stdout)
+        self.assertIn("registered but disabled", result.stdout)
+        self.assertIn("Log out of macOS", result.stdout)
+        self.assertIn("Cursor positioning is unavailable", result.stderr)
+
+    def test_doctor_reports_the_available_zed_window_popup(self):
+        self.env.update(FIGFIG_FIXTURE_TERMINAL="Zed", FIGFIG_FIXTURE_ZED_WINDOW_POPUP="1")
+        self.call("start")
+        result = self.call("doctor")
+        self.assertIn("Popup positioning: Zed window (cursor tracking unavailable)", result.stdout)
+
     def test_invalid_settings_do_not_overwrite_saved_values(self):
         self.call("config", "set", "history", "false")
         before = (self.config / "settings.json").read_bytes()

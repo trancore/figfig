@@ -130,6 +130,8 @@ pub enum ServerMessage {
         accessibility: bool,
         terminal: Option<String>,
         error: Option<String>,
+        #[serde(default)]
+        zed_window_popup: bool,
     },
     Ack,
     Accessibility {

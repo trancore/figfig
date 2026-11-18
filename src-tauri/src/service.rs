@@ -146,6 +146,18 @@ impl Service {
         } else {
             None
         };
+        let tracker_error = foreground
+            .as_deref()
+            .filter(|name| figfig_core::terminal::uses_cursor_tracker(name))
+            .filter(|_| !native::is_electron(pid) || caret.is_err())
+            .and_then(|_| native::tracker_ready(pid).err());
+        let zed_window_popup = foreground.as_deref() == Some("Zed")
+            && (tracker_error.is_some()
+                || inner.caret.is_some_and(|anchor| {
+                    anchor.pid == pid
+                        && matches!(anchor.source, native::PositionSource::ZedWindow { .. })
+                }))
+            && native::zed_window_anchor(pid, None).is_ok();
         ServerMessage::Status {
             version: PROTOCOL_VERSION,
             paused: inner.paused,
@@ -156,14 +168,17 @@ impl Service {
                     .ok()
                     .and_then(|caret| native::terminal_name(caret.pid))
             }),
-            error: if foreground
+            zed_window_popup,
+            error: if zed_window_popup {
+                None
+            } else if foreground
                 .as_deref()
                 .is_some_and(figfig_core::terminal::uses_cursor_tracker)
             {
                 if native::is_electron(pid) && caret.is_ok() {
                     None
                 } else {
-                    native::tracker_ready(pid).err().or(current_error)
+                    tracker_error.or(current_error)
                 }
             } else {
                 caret.err().or(current_error)
@@ -286,7 +301,13 @@ impl Service {
         if let Some(query) = query {
             match query.action {
                 CursorAction::Complete(request, response) => {
-                    self.present_at(app, &request, response, Some(Err(error)))
+                    let anchor =
+                        if native::terminal_name(request.terminal_pid).as_deref() == Some("Zed") {
+                            native::zed_window_anchor(request.terminal_pid, request.terminal_size)
+                        } else {
+                            Err(error)
+                        };
+                    self.present_at(app, &request, response, Some(anchor))
                 }
                 CursorAction::Track { .. } => {
                     self.inner.lock().unwrap().error = Some(error);
@@ -417,7 +438,14 @@ impl Service {
         let Some(old) = old else {
             return;
         };
-        if old.tracker {
+        if let native::PositionSource::ZedWindow { terminal_size, .. } = old.source {
+            if native::zed_window_anchor(old.pid, terminal_size).ok() != Some(old) {
+                self.inner.lock().unwrap().session.dismissed = true;
+                self.hide(app);
+            }
+            return;
+        }
+        if old.source == native::PositionSource::Tracker {
             if native::frontmost_pid() != old.pid {
                 self.hide(app);
                 return;

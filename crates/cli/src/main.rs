@@ -164,8 +164,10 @@ async fn doctor() -> Result<()> {
             accessibility,
             terminal,
             error,
+            zed_window_popup,
         } => {
             println!("Protocol: {version}\nPaused: {paused}\nAccessibility: {accessibility}\nFocused terminal: {}", terminal.as_deref().unwrap_or("none"));
+            let positioning_failed = error.is_some();
             if let Some(error) = error {
                 println!("Position tracking: {error}");
             }
@@ -175,6 +177,8 @@ async fn doctor() -> Result<()> {
                 .is_some_and(|host| host.family == "jetbrains")
             {
                 println!("Cursor positioning: figfig Terminal plugin (JetBrains). See the installation guide to install the plugin.");
+            } else if zed_window_popup {
+                println!("Popup positioning: Zed window (cursor tracking unavailable).");
             } else if terminal
                 .as_deref()
                 .and_then(figfig_core::terminal::host_for_name)
@@ -191,6 +195,11 @@ async fn doctor() -> Result<()> {
                 println!("Cursor positioning: InputMethodKit (requires `figfig setup terminal`).");
             } else if !accessibility {
                 bail!("Run figfig permissions to enable terminal cursor positioning.");
+            }
+            if positioning_failed {
+                bail!(
+                    "Cursor positioning is unavailable; see the Position tracking diagnosis above."
+                );
             }
         }
         ServerMessage::Error { message } => bail!("{message}"),

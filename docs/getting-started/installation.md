@@ -1,6 +1,6 @@
 ---
 title: インストール
-description: figfigの動作環境、ソースからのビルド、zsh連携とmacOSの権限設定。
+description: figfigの動作環境、Homebrewでの導入、ソースからのビルド、zsh連携とmacOSの権限設定。
 ---
 
 figfigはzshに補完ポップアップと履歴に基づくインライン予測を追加するCLIツールです。導入後は、新しいzshセッションから描画ヘルパーが自動起動します。
@@ -16,9 +16,23 @@ figfigはzshに補完ポップアップと履歴に基づくインライン予�
 
 対応範囲と確認状況は[対応環境](../reference/compatibility.md)に記載しています。
 
+## Homebrewで導入する {#homebrewでの導入予定}
+
+Homebrew でインストールし、zsh連携とmacOSの権限を設定します。
+
+```bash
+brew install trancore/tap/figfig
+figfig setup
+figfig permissions
+```
+
+Homebrew版もソースからビルドします。Xcode Command Line Toolsが必要で、Node.js・pnpm・RustはHomebrewがビルド用依存として導入します。CLIは `bin/figfig`、ヘルパーは `libexec/figfig.app` に配置されます。
+
+更新時は `figfig stop`、`brew update`、`brew upgrade trancore/tap/figfig` の順に実行し、新しいzshセッションを開いてください。更新後にmacOSの権限の再設定が必要になる場合があります。
+
 ## ソースから導入する
 
-Homebrew tap `trancore/tap`（GitHubリポジトリ: `trancore/homebrew-tap`）は公開準備中です。現在はサイトのGitHubリンクからソースを取得し、figfigソースのルートディレクトリでビルドします。
+GitHubからソースを取得し、figfigソースのルートディレクトリでビルドします。
 
 Node.js 24.15以降の24系、または26以降、pnpm 12.21.0、Rust 1.90以降、Xcode Command Line Toolsを用意してください。
 
@@ -106,20 +120,6 @@ figfig doctor
 ```
 
 候補が表示されない場合は[トラブルシューティング](../guides/troubleshooting.md)を参照してください。
-
-## Homebrewでの導入予定
-
-初回のGitHub ReleaseとFormulaを公開した後は、次の1コマンドで導入できます。現在は公開準備中のため、上記のソースビルドを利用してください。
-
-```bash
-brew install trancore/tap/figfig
-figfig setup
-figfig permissions
-```
-
-Homebrew版もソースからビルドします。Xcode Command Line Toolsが必要で、Node.js・pnpm・RustはHomebrewがビルド用依存として導入します。CLIは `bin/figfig`、ヘルパーは `libexec/figfig.app` に配置されます。
-
-更新時は `figfig stop`、`brew update`、`brew upgrade trancore/tap/figfig` の順に実行し、新しいzshセッションを開いてください。更新後にmacOSの権限の再設定が必要になる場合があります。
 
 ## 連携を解除する
 

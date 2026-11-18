@@ -7,7 +7,7 @@ The source repository is `trancore/figfig`. Homebrew commands use `trancore/tap`
 
 ## Publication flow {#公開までの流れ}
 
-The first publication is being prepared. See the [verification record](verification.md#2026-11-18のhomebrew公開準備の確認結果) for local validation results.
+The first release is v0.0.1. See the [verification record](verification.md) for results.
 
 1. Publish the tap repository and configure its Actions secret in the source repository.
 2. Tag the intended source commit and generate a Draft Release.
@@ -99,6 +99,7 @@ git -C "$release_dir/tap" init
 git -C "$release_dir/tap" add Formula/figfig.rb
 git -C "$release_dir/tap" commit -m "test: local source release"
 brew tap --custom-remote trancore/figfig-validation "$release_dir/tap"
+brew trust --formula trancore/figfig-validation/figfig
 brew style trancore/figfig-validation/figfig
 brew audit --strict trancore/figfig-validation/figfig
 brew install --build-from-source trancore/figfig-validation/figfig
@@ -112,6 +113,7 @@ After testing, stop the helper, remove any shell integration you added, and remo
 ```sh
 figfig stop
 brew uninstall trancore/figfig-validation/figfig
+brew untrust --formula trancore/figfig-validation/figfig
 brew untap trancore/figfig-validation
 ```
 
@@ -135,7 +137,7 @@ To recover from a failed update or sync an already published release, run `Updat
 gh workflow run update-homebrew-tap.yml --repo trancore/figfig
 ```
 
-After the first official installation is verified, remove the pending-release notices from the tap README, source README, both installation pages, and translated homepage text. Update both compatibility pages and verification records with the actual results.
+After publication, update the Japanese and English compatibility pages and verification records with the actual results.
 
 Repeat this process with a new tag for each update. Existing users run `figfig stop`, `brew update`, and `brew upgrade trancore/tap/figfig`, then open a new zsh session.
 

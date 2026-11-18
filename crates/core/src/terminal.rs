@@ -58,7 +58,7 @@ pub fn tracker_hint(name: &str) -> &'static str {
     if host_for_name(name).is_some_and(|host| host.family == "jetbrains") {
         "JetBrains cursor tracking is unavailable. Install the figfig Terminal plugin (see the installation guide), restart the IDE, and use a local zsh terminal."
     } else {
-        "Integrated-terminal cursor tracking is unavailable. Run `figfig setup terminal`, allow figfig Cursor Tracking, and restart your editor. VSCode and Cursor also require `figfig permissions` for terminal focus detection."
+        "Integrated-terminal cursor tracking did not respond. Run `figfig doctor`. After a first installation, log out of macOS and back in, then retry `figfig setup terminal` and restart your editor. VSCode and Cursor also require `figfig permissions` for terminal focus detection."
     }
 }
 

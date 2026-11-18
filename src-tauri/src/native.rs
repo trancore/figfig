@@ -242,15 +242,26 @@ mod mac {
         let sources = Owned::new(unsafe {
             TISCreateInputSourceList(filter.as_concrete_TypeRef() as Ref, true)
         })?;
+        let mut registered = false;
+        let mut enabled = false;
+        let mut selected = false;
         for index in 0..unsafe { CFArrayGetCount(sources.0) } {
             let source = unsafe { CFArrayGetValueAtIndex(sources.0, index) };
+            let category =
+                unsafe { TISGetInputSourceProperty(source, kTISPropertyInputSourceCategory) };
+            if category.is_null() || !unsafe { CFEqual(category, kTISCategoryPaletteInputSource) } {
+                continue;
+            }
+            registered = true;
+            let state =
+                unsafe { TISGetInputSourceProperty(source, kTISPropertyInputSourceIsEnabled) };
+            let source_enabled = !state.is_null() && unsafe { CFBooleanGetValue(state) };
+            enabled |= source_enabled;
             let state =
                 unsafe { TISGetInputSourceProperty(source, kTISPropertyInputSourceIsSelected) };
-            if !state.is_null() && unsafe { CFBooleanGetValue(state) } {
-                return Ok(());
-            }
+            selected |= source_enabled && !state.is_null() && unsafe { CFBooleanGetValue(state) };
         }
-        Err(figfig_core::terminal::tracker_hint(&terminal).into())
+        crate::cursor::TrackerState::from_flags(registered, enabled, selected).require_active()
     }
 
     pub fn request_tracker_caret(request_id: &str, terminal_pid: i32) -> Result<(), String> {
@@ -354,7 +365,7 @@ mod mac {
                 let state =
                     unsafe { TISGetInputSourceProperty(source, kTISPropertyInputSourceIsEnabled) };
                 if state.is_null() || !unsafe { CFBooleanGetValue(state) } {
-                    return Err("Allow figfig to enable Cursor Tracking in the macOS prompt, then retry `figfig setup terminal`. If no prompt appears, log out and back in first.".into());
+                    return crate::cursor::TrackerState::Disabled.require_active();
                 }
                 let result = unsafe { TISSelectInputSource(source) };
                 let state =

@@ -78,4 +78,4 @@ Running figfig without arguments also displays help.
 
 ## Exit codes {#終了コード}
 
-Successful operations return `0`. Invalid arguments, settings errors, and connection failures return `1`. `doctor` also returns `1` when Accessibility permission is missing.
+Successful operations return `0`. Invalid arguments, settings errors, and connection failures return `1`. `doctor` also returns `1` when a required Accessibility permission is missing or cursor positioning is unavailable.

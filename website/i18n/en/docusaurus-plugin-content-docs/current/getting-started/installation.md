@@ -12,7 +12,7 @@ figfig is a CLI tool that adds a completion popup and inline history suggestions
 | OS | macOS 13 or later |
 | Shell | zsh 5.9 or later |
 | Terminal | Terminal.app, iTerm2, and VSCode/Cursor/Zed/JetBrains integrated terminals |
-| Permission | Accessibility for Terminal.app/iTerm2/VSCode/Cursor; shared tracker for Zed; plugin for JetBrains |
+| Permission | Accessibility for Terminal.app/iTerm2/VSCode/Cursor; Accessibility for a window-anchored popup in Zed, optional tracker for caret placement; plugin for JetBrains |
 
 See [Compatibility](../reference/compatibility.md) for the supported scope and verification status.
 
@@ -69,9 +69,13 @@ VSCode, Cursor, and Zed share an optional cursor tracker:
 figfig setup terminal
 ```
 
-This installs a palette input method at `~/Library/Input Methods/figfig Cursor.app`. Allow “figfig Cursor Tracking” when prompted, restart the editor, and open a new local zsh terminal. If macOS has not recognized it, log out and back in, then retry. It does not handle keystrokes, read input text, or switch your keyboard layout or Japanese input method.
+This installs a palette input method at `~/Library/Input Methods/figfig Cursor.app`. It does not handle keystrokes, read input text, or switch your keyboard layout or Japanese input method.
 
-VSCode and Cursor also require Accessibility permission through `figfig permissions` to distinguish the terminal input from the editor. They use Accessibility geometry directly when available, with InputMethodKit as a fallback. Zed uses InputMethodKit.
+Immediately after a first installation, macOS may register the tracker without enabling it. If `figfig doctor` reports `registered but disabled`, **log out of macOS and back in**, then repeat `figfig setup terminal`. Restarting Zed alone does not resolve this state. Then restart the editor and open a new local zsh terminal.
+
+Palette input methods do not appear in Keyboard → Input Sources, and macOS provides no standard UI to enable them. Do not wait for an activation dialog that has not appeared. See [Apple's explanation](https://developer.apple.com/library/archive/qa/qa1810/_index.html).
+
+VSCode and Cursor also require Accessibility permission through `figfig permissions` to distinguish the terminal input from the editor. They use Accessibility geometry directly when available, with InputMethodKit as a fallback. In Zed, figfig uses InputMethodKit for caret placement when available. With Accessibility permission from `figfig permissions`, it estimates the grid origin and uses the reported cursor cell to show the same popup below the input in the bottom terminal when the tracker is unavailable. Use Up and Down to select and Tab or Enter to insert.
 
 Repeat setup after updating. Remove the shared tracker with `figfig setup terminal --remove`. The existing `figfig setup zed` and `figfig setup zed --remove` remain compatibility aliases for the same bundle.
 

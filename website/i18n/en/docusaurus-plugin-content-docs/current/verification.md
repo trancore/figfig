@@ -11,6 +11,14 @@ The final production build and ad-hoc signature verification passed. The package
 
 VSCode's terminal input was observed, but automated input did not produce a verifiable screen change. The updated InputMethodKit tracker also needs macOS activation, which was refused during setup. Log out/in, retry `figfig setup terminal`, and restart the editor. Real popup placement/insertion in VSCode/Cursor/Zed, JetBrains Classic/Reworked, product-specific compatibility, IME, pane switching, zoom, and mixed-scale displays remain unverified. Registry and fixture coverage do not constitute real-IDE acceptance.
 
+### Follow-up: missing popup in Zed
+
+On Zed 1.28.1, shell integration, the renderer, Accessibility, and completion settings were available, but the palette tracker was registered, disabled, and unselected. `TISEnableInputSource` returned 0 without enabling it; explicitly user-authorized `TISSelectInputSource` returned -50. The user had not logged out of macOS since the first registration.
+
+The palette remained disabled after the next login. When caret tracking is unavailable in Zed, figfig places its graphical popup in the lower part of the focused window using Accessibility. The helper runs without taking focus from Zed. With Zed 1.28.1 in the foreground, a zsh test session connected to the packaged helper and typed `git f`. WindowServer reported a visible 320 × 42 point popup. Tab inserted `git fetch ` and closed the popup.
+
+The placement follow-up used a zsh test session with a 1,458 × 342 point text grid matching the local Zed terminal. With Zed in the foreground, simulated cursor reports for rows 3 and 9 moved the visible popup below the corresponding input row. Tab inserted the completion and closed the popup.
+
 ## Homebrew preparation results recorded on 2026-11-18 {#2026-11-18のhomebrew公開準備の確認結果}
 
 - Built and installed a source archive of commit `d4e29633a41f5b22564b0c12b8e682665315116e` through a disposable Homebrew tap on Apple Silicon and macOS 27.0.1. The local validation formula was kept out of the public tap directory.

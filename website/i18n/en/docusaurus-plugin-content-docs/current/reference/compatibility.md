@@ -20,7 +20,7 @@ SSH sessions, tmux, other shells, and other terminals are outside the initial re
 | Host | Position/focus provider | Verification |
 | --- | --- | --- |
 | VSCode stable / Insiders, Cursor | Accessibility; optional InputMethodKit fallback | Registry, native geometry, and PTY ancestry tests; real popup acceptance pending |
-| Zed stable / Preview / Nightly | InputMethodKit (`figfig setup terminal`) | Registry, native geometry, IPC, and ancestry tests; real popup acceptance pending |
+| Zed stable / Preview / Nightly | InputMethodKit and an anchor based on Accessibility window bounds and the terminal’s reported cursor cell when the tracker is unavailable | See the [verification record](../verification.md) |
 | IntelliJ IDEA, PyCharm, WebStorm, GoLand, CLion, Rider, RubyMine, DataGrip, RustRover, Android Studio | figfig Terminal plugin | Plugin build against installed IntelliJ SDK and real Java IPC tested; per-product acceptance pending |
 
 JetBrains Classic and Reworked are targets; deprecated Experimental 2024 is excluded. Product recognition is not evidence that all versions and terminal engines have passed real UI checks. See the [installation guide](../getting-started/installation.md#zedの内蔵ターミナルで使う).

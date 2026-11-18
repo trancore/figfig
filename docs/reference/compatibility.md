@@ -20,7 +20,7 @@ SSH先、tmux内、他のシェル・ターミナルは初期版の対象範囲�
 | ホスト | 位置・フォーカス取得 | 検証状況 |
 | --- | --- | --- |
 | VSCode stable／Insiders、Cursor | Accessibility、必要時は共通InputMethodKitヘルパー | 識別・ネイティブ座標・PTY祖先判定を自動検証。実ポップアップの受け入れ確認は未完了 |
-| Zed stable／Preview／Nightly | InputMethodKit（`figfig setup terminal`） | 識別・ネイティブ座標・通信・祖先判定を自動検証。実ポップアップの受け入れ確認は未完了 |
+| Zed stable／Preview／Nightly | InputMethodKit。取得できない場合はアクセシビリティとカーソルの行・列で下部ターミナルの入力付近にポップアップを配置 | 詳細は[検証記録](../verification.md) |
 | IntelliJ IDEA、PyCharm、WebStorm、GoLand、CLion、Rider、RubyMine、DataGrip、RustRover、Android Studio | figfig Terminalプラグイン | 導入済みIntelliJ SDKでのビルドと実Java通信を検証。製品ごとの実機確認は未完了 |
 
 JetBrainsはClassicとReworkedを対象とし、廃止済みExperimental 2024は含めません。識別への対応と、全バージョン・ターミナル方式での実機確認は区別します。[導入手順](../getting-started/installation.md#zedの内蔵ターミナルで使う)も参照してください。
@@ -41,7 +41,7 @@ git、brew、npm、pnpm、dockerの主要なサブコマンドとオプション
 
 Terminal.app／iTerm2はmacOS Accessibilityから入力位置を取得します。VSCode／Cursorはフォーカスされたxterm入力欄を識別してAccessibility座標を優先し、必要時は共通InputMethodKitヘルパーを使います。対応するターミナルが最前面にあり、シェルのターミナルPIDと一致する場合にポップアップを表示します。
 
-ZedはInputMethodKit、JetBrains系は専用プラグインでカーソル座標を取得します。別の位置やペインへ移動した場合は候補を閉じ、新しいシェル入力を待ちます。位置取得に失敗した場合やヘルパー未登録時も候補を閉じ、`figfig doctor`に診断を表示します。
+ZedはInputMethodKit、JetBrains系は専用プラグインでカーソル座標を取得します。別の位置やペインへ移動した場合は候補を閉じ、新しいシェル入力を待ちます。Zedで位置取得に失敗した場合やヘルパー未登録時は、アクセシビリティのウィンドウ位置と、下部ターミナルが返すカーソルの行・列を使ってポップアップを配置します。`figfig doctor` で配置方法を確認できます。
 
 ## 検証状況
 

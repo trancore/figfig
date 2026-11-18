@@ -12,7 +12,7 @@ figfigはzshに補完ポップアップと履歴に基づくインライン予�
 | OS | macOS 13以降 |
 | シェル | zsh 5.9以降 |
 | ターミナル | Terminal.app、iTerm2、VSCode・Cursor・Zed・JetBrains系の内蔵ターミナル |
-| 権限 | Terminal.app／iTerm2／VSCode／Cursorはアクセシビリティ。Zedは共通ヘルパー、JetBrains系は専用プラグイン |
+| 権限 | Terminal.app／iTerm2／VSCode／Cursorはアクセシビリティ。Zedはアクセシビリティ、カーソル位置に合わせた表示には共通ヘルパー、JetBrains系は専用プラグイン |
 
 対応範囲と確認状況は[対応環境](../reference/compatibility.md)に記載しています。
 
@@ -69,9 +69,13 @@ VSCode・Cursor・Zedには共通のカーソル取得ヘルパーを用意し�
 figfig setup terminal
 ```
 
-`~/Library/Input Methods/figfig Cursor.app`へパレット型入力メソッドを導入します。macOSが「figfig Cursor Tracking」の有効化を求めたら許可し、エディタを再起動して新しいローカルzshターミナルを開いてください。登録が認識されない場合はログアウト・ログインして再実行します。キーイベントや入力テキストを取得せず、キーボード配列や日本語入力を切り替えません。
+`~/Library/Input Methods/figfig Cursor.app`へパレット型入力メソッドを導入します。キーイベントや入力テキストを取得せず、キーボード配列や日本語入力を切り替えません。
 
-VSCode・Cursorでは `figfig permissions` でアクセシビリティ権限も許可してください。ターミナル入力欄を識別し、取得できる場合はAccessibilityから直接位置を取得します。取得できない場合は共通ヘルパーを使います。ZedはInputMethodKitによる取得を使います。
+初回登録直後は、macOSが入力メソッドを登録しても有効化しないことがあります。`figfig doctor` に `registered but disabled` と表示された場合は、**macOSからログアウト・ログイン**してから同じ `figfig setup terminal` を再実行してください。Zedだけの再起動ではこの状態は解消しません。その後エディタを再起動し、新しいローカルzshターミナルで確認します。
+
+パレット型入力メソッドは通常の「キーボード → 入力ソース」には表示されず、有効化のための標準UIもありません。表示されない許可ダイアログを探す必要はありません。[Appleの説明](https://developer.apple.com/library/archive/qa/qa1810/_index.html)も参照してください。
+
+VSCode・Cursorでは `figfig permissions` でアクセシビリティ権限も許可してください。ターミナル入力欄を識別し、取得できる場合はAccessibilityから直接位置を取得します。取得できない場合は共通ヘルパーを使います。Zedで画面上のカーソル座標を取得できないときは、下部ターミナルが返すカーソルの行・列とアクセシビリティから位置を推定し、入力の下に同じポップアップを表示します。`figfig permissions` で許可してください。上下キーで選び、TabまたはEnterで挿入できます。
 
 更新後は同じコマンドを再実行します。削除は `figfig setup terminal --remove` です。既存の `figfig setup zed` と `figfig setup zed --remove` も同じ共有ヘルパーを操作する互換コマンドとして使えます。
 

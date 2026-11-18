@@ -27,7 +27,7 @@ flowchart LR
 
 ブリッジは新しい更新番号と一致する応答だけをシェルへ渡す。閉じる操作以降の遅い応答は破棄する。シェルも更新番号を確認し、候補と選択状態を保持してキー操作を即時処理する。入力欄を変更する文字列はデータとして扱い、`eval`を使用しない。
 
-シェル→ブリッジは`operation`、`revision`、`cursor`、`cwd`、`buffer`、`selected`の6フィールドをNULで区切る。ブリッジ→シェルは`R revision start end visible count [quotedInsertion appendSpace]...`。`P historyEnabled`は設定・一時停止を反映する。
+シェル→ブリッジは`operation`、`revision`、`cursor`、`cwd`、`buffer`、`detail`の6フィールドをNULで区切る。`detail`は選択操作の候補番号か、Zedで補完を要求するときのカーソル位置（1始まりの行・列を`;`で区切った値）。ブリッジ→シェルは`R revision start end visible count [quotedInsertion appendSpace]...`。`P historyEnabled`は設定・一時停止を反映する。
 
 ## ポップアップの描画
 
@@ -38,6 +38,8 @@ Reactの`Popup`は幅320px・行高20pxの候補一覧と、選択候補の説�
 ## 位置・フォーカス
 
 Zedの内蔵ターミナルでは、CLIに埋め込んだパレット型InputMethodKitヘルパーを `figfig setup terminal` で登録する。描画ヘルパーは分散通知で座標取得を依頼し、入力メソッドは `cursorPosition` メッセージで要求ID、PID、座標、行高、フォーカス識別子だけをユーザー専用Unixソケットへ返す。キーイベントやテキストは取得しない。応答は要求ID・PID・500msの期限で照合し、古い応答は破棄する。別ペインやエディタへ候補を移さないよう、表示中の位置変化では候補を閉じる。
+
+下部ターミナルでは、ZLEの再描画後にカーソル位置を問い合わせる。取得した行・列とPTYの表示サイズをブリッジから渡し、画面座標を取得できないときは前面Zedウィンドウの位置から補完ポップアップを配置する。問い合わせ中に届いた通常の入力はZLEに戻す。
 
 ブリッジ起動時に最大64段の親プロセス列から対応するターミナル／エディタのメインPIDを特定する。アプリはそのPIDと最前面のアプリが一致し、フォーカスされた要素の挿入位置が取得できた場合だけ表示する。
 

@@ -24,7 +24,7 @@ figfig doctor
 
 `figfig complete 'git ch'`で`candidates`が返る場合は、補完データが生成されています。ポップアップについては`doctor`の位置・権限情報も確認してください。
 
-Zedの内蔵ターミナルでは追加で `figfig setup terminal` を実行し、macOSの「figfig Cursor Tracking」の有効化を許可します。Zedを再起動して新しいzshターミナルを開いてください。登録が認識されない場合はログアウト・ログイン後に再実行します。Zedの位置取得にはInputMethodKitを使うため、アクセシビリティの許可だけでは表示されません。
+Zedで画面上のカーソル座標を取得できないときは、下部ターミナルが返すカーソルの行・列と推定した表示領域から、入力の下にポップアップを配置します。収まるスペースがないときは入力の上に表示します。行・列を取得できない場合や表示領域を推定できない場合は、前面ウィンドウ下部に配置します。`figfig permissions` で許可してください。`figfig doctor` が `Popup positioning: Zed window` を表示すれば、この表示方法を利用できます。カーソルのそばに表示するには位置取得ヘルパーを `figfig setup terminal` で有効化します。
 
 ## ヘルパーが見つからない
 
@@ -63,4 +63,4 @@ zsh連携をOh My Zshやプロンプトの初期化後に読み込みます。`z
 
 ## 内蔵ターミナルの連携を確認する
 
-VSCode／Cursorではアクセシビリティ権限とターミナル入力欄へのフォーカスが必要です。直接位置を取得できない場合は `figfig setup terminal` を実行し、Cursor Trackingを許可してエディタを再起動します。JetBrains系ではfigfig Terminalを導入してプロジェクトを開きます。`jb-<PID>.sock`がない場合はプラグインが起動していないか、IDEとヘルパーの `FIGFIG_RUNTIME_DIR` が異なります。対象ターミナルで `figfig doctor` を実行してください。IDE自身のターミナル補完と候補が重なる場合は、IDE側の補完を無効にします。
+VSCode／Cursorではアクセシビリティ権限とターミナル入力欄へのフォーカスが必要です。直接位置を取得できない場合は `figfig setup terminal` を実行してエディタを再起動します。登録済みでも無効の場合は、先にmacOSからログアウト・ログインします。JetBrains系ではfigfig Terminalを導入してプロジェクトを開きます。`jb-<PID>.sock`がない場合はプラグインが起動していないか、IDEとヘルパーの `FIGFIG_RUNTIME_DIR` が異なります。対象ターミナルで `figfig doctor` を実行してください。IDE自身のターミナル補完と候補が重なる場合は、IDE側の補完を無効にします。
